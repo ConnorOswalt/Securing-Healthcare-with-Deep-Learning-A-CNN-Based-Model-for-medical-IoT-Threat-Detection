@@ -53,7 +53,7 @@ This repository provides the implementation of our CNN-based intrusion detection
 ```bash
 git clone https://github.com/alirezamohamadiam/Securing-Healthcare-with-Deep-Learning-A-CNN-Based-Model-for-medical-IoT-Threat-Detection.git
 ```
-> Make sure Git is installed on your machine.If not, grab it from: https://git-scm.com/install
+> Make sure Git is installed on your machine. If not, grab it from: https://git-scm.com/install
 
 ### Step 2: Install Requirements
 Navigate to Project Directory
@@ -152,6 +152,7 @@ The open-access PDF version of the paper is available on arXiv. You can read the
 Made with ❤️ by Alireza Mohamadi
 
 </div>
+
 
 
 
