@@ -1,3 +1,4 @@
+import datetime
 import os
 import argparse
 from data_loader import load_and_preprocess_data
@@ -24,12 +25,14 @@ if __name__ == "__main__":
 
     import tensorflow as tf 
     if tf.test.gpu_device_name():
-        print('GPU is available!')
+        print('Using device ',tf.test.gpu_device_name())
     else:
-        print('GPU is not available. Using CPU.')
+        print('GPU is not available. Using CPU.', tf.test.gpu_device_name())
 
     model = train_model(model, X_train, y_train_categorical, X_val, y_val_categorical)
-
+    
+    model.save(f"cnn_iomt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.keras")
+    
     loss, accuracy = model.evaluate(X_test, y_test_categorical)
     print(f"Test Loss: {loss:.4f}")
     print(f"Test Accuracy: {accuracy:.4f}")
