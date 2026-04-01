@@ -27,6 +27,10 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
     // Constructor
     public SpaceInvadersUI() {
+
+        // Start the game calculator thread for position/collision updates
+        gameCalculator = new GameCalculator(this);
+        gameCalculator.start();
         // Timer is used only for repainting (UI thread)
         repaintTimer = new Timer(20, e -> repaint()); // 20ms delay for smoother animations
         invaders = new ArrayList<>(); // Need to describe what ArrayList<> is.
@@ -45,9 +49,6 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         setFocusable(true);
         addKeyListener(this);
         
-        // Start the game calculator thread for position/collision updates
-        gameCalculator = new GameCalculator(this);
-        gameCalculator.start();
         
         // Start the repaint timer (UI thread)
         repaintTimer.start();
