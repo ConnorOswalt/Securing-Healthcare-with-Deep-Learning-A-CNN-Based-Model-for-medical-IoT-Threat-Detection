@@ -12,6 +12,7 @@ public class Main {
             frame.add(game);
             frame.setSize(600, 700);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.setJMenuBar(game.createMenuBar());
             frame.setVisible(true);
         });
     }

@@ -114,6 +114,14 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     }
 
     /**
+     * Creates and returns the menu bar for the game.
+     * @return the JMenuBar with game menus
+     */
+    public JMenuBar createMenuBar() {
+        return new JMenuBar();
+    }
+
+    /**
      * Gracefully shuts down the game calculator thread and stops the repaint timer.
      * Call this before closing the application.
      */
