@@ -5,22 +5,13 @@ import javax.swing.JMenuItem;
 import java.util.ArrayList;
 
 public class ParentMenu extends JMenu {
-
     protected ArrayList<String> buttonPaths;
-    protected String menuTitle = "parent";
     protected ArrayList<String> buttonTitles;
 
     public ParentMenu() {
-        //Paths to items in resources
-        buttonPaths = new ArrayList<>();
-        //names of menu items
-        buttonTitles = new ArrayList<>();
-        buttonTitles.add("button1");
-        buttonTitles.add("button2");
-        buttonTitles.add("button3");
-        buttonTitles.add("Custom");
-
-        this.setText(menuTitle);
+        this.buttonPaths = setButtonPaths();
+        this.buttonTitles = setButtonTitles();
+        this.setText(setTitle());
 
         // Add menu items
         for (String title : buttonTitles) {
@@ -30,4 +21,16 @@ public class ParentMenu extends JMenu {
         }
     }
 
+    protected ArrayList<String> setButtonPaths() {
+        return new ArrayList<>();
+    }
+
+    protected ArrayList<String> setButtonTitles() {
+        return new ArrayList<>(java.util.Arrays.asList(
+                "button1", "button2", "button3", "button4"));
+    }
+
+    protected String setTitle() {
+        return "parent";
+    }
 }
