@@ -15,14 +15,15 @@ public class ParentMenu extends JMenu {
         this.setText(setTitle());
 
         // Add menu items with listener and paths
-        ActionListener menuListener = getMenuListener();
         for (int i = 0; i < buttonTitles.size(); i++) {
             JMenuItem item = new JMenuItem(buttonTitles.get(i));
-            
-            // Add listener if provided
-            if (menuListener != null) {
-                item.addActionListener(menuListener);
-            }
+
+            item.addActionListener(e -> {
+                ActionListener menuListener = getMenuListener();
+                if (menuListener != null) {
+                    menuListener.actionPerformed(e);
+                }
+            });
             
             // Set path for the first 3 buttons if available
             if (i < 3 && i < buttonPaths.size()) {
