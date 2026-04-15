@@ -42,4 +42,24 @@ public class ListenerActions {
             game.moveRight = false;
         }
     }
+
+    public ActionListener shooterMenuListener() {
+        return e -> {
+        };
+    }
+
+    public ActionListener invaderMenuListener() {
+        return e -> {
+        };
+    }
+
+    public ActionListener bulletMenuListener() {
+        return e -> {
+        };
+    }
+
+    public ActionListener musicMenuListener() {
+        return e -> {
+        };
+    }
 }

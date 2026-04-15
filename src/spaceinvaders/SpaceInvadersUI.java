@@ -2,6 +2,11 @@ package spaceinvaders;
 
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Invader;
+import spaceinvaders.JMenus.ParentMenu;
+import spaceinvaders.JMenus.ShooterMenu;
+import spaceinvaders.JMenus.InvaderMenu;
+import spaceinvaders.JMenus.BulletMenu;
+import spaceinvaders.JMenus.MusicMenu;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -111,6 +116,19 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
     public void setShooter_X_Coordinate(int shooter_X) {
         shooter_X_Coordinate = shooter_X;
+    }
+
+    /**
+     * Creates and returns the menu bar for the game.
+     * @return the JMenuBar with game menus
+     */
+    public JMenuBar createMenuBar() {
+        JMenuBar menuBar = new JMenuBar();
+        menuBar.add(new ShooterMenu());
+        menuBar.add(new InvaderMenu());
+        menuBar.add(new BulletMenu());
+        menuBar.add(new MusicMenu());
+        return menuBar;
     }
 
     /**
