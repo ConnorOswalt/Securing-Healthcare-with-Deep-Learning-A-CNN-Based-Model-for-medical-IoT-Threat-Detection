@@ -2,6 +2,7 @@ package spaceinvaders;
 
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Invader;
+import spaceinvaders.JMenus.ParentMenu;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -118,7 +119,10 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
      * @return the JMenuBar with game menus
      */
     public JMenuBar createMenuBar() {
-        return new JMenuBar();
+        JMenuBar menuBar = new JMenuBar();
+        ParentMenu parentMenu = new ParentMenu();
+        menuBar.add(parentMenu);
+        return menuBar;
     }
 
     /**
