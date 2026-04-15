@@ -2,6 +2,7 @@ package spaceinvaders.JMenus;
 
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 
 public class ParentMenu extends JMenu {
@@ -13,10 +14,21 @@ public class ParentMenu extends JMenu {
         this.buttonTitles = setButtonTitles();
         this.setText(setTitle());
 
-        // Add menu items
-        for (String title : buttonTitles) {
-            JMenuItem item = new JMenuItem(title);
-            // No action for now
+        // Add menu items with listener and paths
+        ActionListener menuListener = getMenuListener();
+        for (int i = 0; i < buttonTitles.size(); i++) {
+            JMenuItem item = new JMenuItem(buttonTitles.get(i));
+            
+            // Add listener if provided
+            if (menuListener != null) {
+                item.addActionListener(menuListener);
+            }
+            
+            // Set path for the first 3 buttons if available
+            if (i < 3 && i < buttonPaths.size()) {
+                item.setName(buttonPaths.get(i));
+            }
+            
             this.add(item);
         }
     }
@@ -32,5 +44,9 @@ public class ParentMenu extends JMenu {
 
     protected String setTitle() {
         return "parent";
+    }
+
+    protected ActionListener getMenuListener() {
+        return null;
     }
 }
