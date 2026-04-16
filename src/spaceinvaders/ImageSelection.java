@@ -30,12 +30,6 @@ public class ImageSelection {
         }
     }
 
-    public void setShooterImage(Image shooterImage) {
-        if (shooterImage != null) {
-            this.shooterImage = shooterImage;
-        }
-    }
-
     public void setInvaderImageFromResourcePath(String resourcePath) {
         Image loadedImage = loadImage("invader", resourcePath);
         if (loadedImage != null) {
