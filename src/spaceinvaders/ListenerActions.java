@@ -1,5 +1,6 @@
 package spaceinvaders;
 
+import spaceinvaders.JMenus.MenuImplementations.ShooterImplementation;
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Invader;
 
@@ -13,6 +14,8 @@ import java.awt.event.*;
  * are now handled by GameCalculator on a separate thread.
  */
 public class ListenerActions {
+    private final ShooterImplementation shooterImplementation = new ShooterImplementation();
+
 
     public void keyPressed(KeyEvent e, SpaceInvadersUI game) {
         int key = e.getKeyCode();
@@ -44,8 +47,7 @@ public class ListenerActions {
     }
 
     public ActionListener shooterMenuListener() {
-        return e -> {
-        };
+        return e -> shooterImplementation.handleShooterSelection(e);
     }
 
     public ActionListener invaderMenuListener() {

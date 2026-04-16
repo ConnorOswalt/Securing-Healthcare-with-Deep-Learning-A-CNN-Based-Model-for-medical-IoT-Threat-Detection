@@ -23,6 +23,20 @@ public class ImageSelection {
                 "/spaceinvaders/resources/Invader/InvaderImage.png");
     }
 
+    public void setShooterImageFromResourcePath(String resourcePath) {
+        Image loadedImage = loadImage("shooter", resourcePath);
+        if (loadedImage != null) {
+            shooterImage = loadedImage;
+        }
+    }
+
+    public void setInvaderImageFromResourcePath(String resourcePath) {
+        Image loadedImage = loadImage("invader", resourcePath);
+        if (loadedImage != null) {
+            invaderImage = loadedImage;
+        }
+    }
+
     private static Image loadImage(String imageType, String defaultResourcePath) {
         try {
             return ImageIO.read(ImageSelection.class.getResource(defaultResourcePath));

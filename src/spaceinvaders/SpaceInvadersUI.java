@@ -15,6 +15,7 @@ import java.util.Random;
 import javax.swing.*;
 
 public class SpaceInvadersUI extends JPanel implements KeyListener {
+    private static SpaceInvadersUI activeInstance;
 
     private final Timer repaintTimer;
     public ArrayList<Invader> invaders;
@@ -32,6 +33,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
     // Constructor
     public SpaceInvadersUI() {
+        activeInstance = this;
 
         // Timer is used only for repainting (UI thread)
         repaintTimer = new Timer(20, e -> repaint()); // 20ms delay for smoother animations
@@ -67,6 +69,10 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         
         // Start the repaint timer (UI thread)
         repaintTimer.start();
+    }
+
+    public static SpaceInvadersUI getActiveInstance() {
+        return activeInstance;
     }
 
     @Override
