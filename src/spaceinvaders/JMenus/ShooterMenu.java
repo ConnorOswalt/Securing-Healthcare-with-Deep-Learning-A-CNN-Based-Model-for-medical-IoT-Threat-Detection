@@ -14,7 +14,15 @@ public class ShooterMenu extends ParentMenu {
     @Override
     protected java.util.ArrayList<String> setButtonTitles() {
         return new java.util.ArrayList<>(java.util.Arrays.asList(
-                "Shooter1", "Shooter2", "Shooter3", "Shooter4"));
+                "Smile", "Retro", "Sherman Tank", "custom"));
+    }
+
+    @Override
+    protected java.util.ArrayList<String> setButtonPaths() {
+        return new java.util.ArrayList<>(java.util.Arrays.asList(
+                "/spaceinvaders/resources/Shooter/ShooterImage.png",
+                "/spaceinvaders/resources/Shooter/Retro.png",
+                "/spaceinvaders/resources/Shooter/Sherman-Shooter.png"));
     }
 
     @Override
