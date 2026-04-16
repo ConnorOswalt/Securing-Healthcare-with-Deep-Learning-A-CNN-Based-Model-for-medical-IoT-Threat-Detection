@@ -1,0 +1,59 @@
+package spaceinvaders.JMenus.MenuImplementations;
+
+import spaceinvaders.GameExceptions;
+import spaceinvaders.SpaceInvadersUI;
+
+import java.awt.event.ActionEvent;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+
+public class InvaderImplementation {
+    public void handleInvaderSelection(ActionEvent e) {
+        if (!(e.getSource() instanceof JMenuItem)) {
+            return;
+        }
+
+        JMenuItem selectedItem = (JMenuItem) e.getSource();
+        String selectedPath = selectedItem.getName();
+
+        SpaceInvadersUI game = SpaceInvadersUI.getActiveInstance();
+        if (game == null) {
+            return;
+        }
+
+        if (selectedPath == null || selectedPath.isBlank()) {
+            String customPath = JOptionPane.showInputDialog(
+                    null,
+                    "Enter project resource path " +
+                    "(example: /spaceinvaders/resources/Invader/Peter_Griffin.png):");
+
+            if (customPath == null || customPath.isBlank()) {
+                return;
+            }
+
+            String normalizedPath = normalizeResourcePath(customPath);
+            if (InvaderImplementation.class.getResource(normalizedPath) == null) {
+                GameExceptions.showErrorDialog("Invalid project resource path: " + customPath);
+                return;
+            }
+
+            game.imageSelection.setInvaderImageFromResourcePath(normalizedPath);
+            game.repaint();
+            return;
+        }
+
+        game.imageSelection.setInvaderImageFromResourcePath(selectedPath);
+        game.repaint();
+    }
+
+    private String normalizeResourcePath(String customPath) {
+        String normalized = customPath.trim().replace('\\', '/');
+        if (normalized.startsWith("src/")) {
+            normalized = normalized.substring(3);
+        }
+        if (!normalized.startsWith("/")) {
+            normalized = "/" + normalized;
+        }
+        return normalized;
+    }
+}

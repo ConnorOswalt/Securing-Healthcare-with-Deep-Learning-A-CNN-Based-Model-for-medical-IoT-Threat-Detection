@@ -1,5 +1,6 @@
 package spaceinvaders;
 
+import spaceinvaders.JMenus.MenuImplementations.InvaderImplementation;
 import spaceinvaders.JMenus.MenuImplementations.ShooterImplementation;
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Invader;
@@ -15,6 +16,7 @@ import java.awt.event.*;
  */
 public class ListenerActions {
     private final ShooterImplementation shooterImplementation = new ShooterImplementation();
+    private final InvaderImplementation invaderImplementation = new InvaderImplementation();
 
 
     public void keyPressed(KeyEvent e, SpaceInvadersUI game) {
@@ -51,8 +53,7 @@ public class ListenerActions {
     }
 
     public ActionListener invaderMenuListener() {
-        return e -> {
-        };
+        return e -> invaderImplementation.handleInvaderSelection(e);
     }
 
     public ActionListener bulletMenuListener() {
