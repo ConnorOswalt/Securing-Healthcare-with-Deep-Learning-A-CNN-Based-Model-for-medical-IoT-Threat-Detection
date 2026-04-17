@@ -36,6 +36,9 @@ public class ListenerActions {
                         new Bullet(shooter_X_Coordinate + shooter_width / 2, game.getHeight() - shooter_height));
             }
         }
+        if (key == KeyEvent.VK_R && game.isGameOver()) {
+            game.restartGame();
+        }
     }
 
     public void keyReleased(KeyEvent e, SpaceInvadersUI game) {
