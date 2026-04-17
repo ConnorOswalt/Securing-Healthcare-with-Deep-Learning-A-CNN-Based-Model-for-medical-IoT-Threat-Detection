@@ -31,6 +31,33 @@ public class ScoreManager extends Thread {
     }
 
     /**
+     * Adds points to the current score.
+     * 
+     * @param points the number of points to add
+     */
+    public synchronized void addPoints(int points) {
+        currentScore += points;
+    }
+
+    /**
+     * Gets the current score.
+     * 
+     * @return the current score
+     */
+    public int getCurrentScore() {
+        return currentScore;
+    }
+
+    /**
+     * Resets the current score to 0.
+     */
+    public synchronized void resetScore() {
+        currentScore = 0;
+    }
+
+   
+
+    /**
      * Stops the score manager thread.
      */
     public void stopThread() {
