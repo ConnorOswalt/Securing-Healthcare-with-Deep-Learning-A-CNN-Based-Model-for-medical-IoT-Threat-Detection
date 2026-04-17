@@ -37,8 +37,8 @@ https://ieeexplore.ieee.org/abstract/document/11337811?casa_token=j1IvUF2fBAMAAA
 ## Run Instructions
 
 required:
-git
-python 3.7 to 3.12 (not older or newer)
+git,
+python 3.7 to 3.12 (not older or newer),
 unix command line interface
 
 Step 1. Clone this repository
