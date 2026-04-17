@@ -1,5 +1,6 @@
 package spaceinvaders;
 
+import spaceinvaders.scores.ScoreManager;
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Invader;
 import spaceinvaders.JMenus.ParentMenu;
@@ -30,6 +31,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private int shooter_X_Coordinate = 200;
     private GameCalculator gameCalculator;
     public static int breakpointcounter = 0;
+    private ScoreManager scoreManager;
 
     // Constructor
     public SpaceInvadersUI() {
@@ -46,6 +48,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         listenerActions = new ListenerActions();
         imageSelection = new ImageSelection();
         paintingActions = new PaintingActions();
+        scoreManager = new ScoreManager();
         // For debugging
 
         // Set images
@@ -62,6 +65,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
                     // Now that UI is initialized, start the game calculator thread
                     gameCalculator = new GameCalculator(SpaceInvadersUI.this);
                     gameCalculator.start();
+                    scoreManager.start(); // Start the score manager thread
                     removeComponentListener(this); // Remove listener after starting
                 }
             }
@@ -147,6 +151,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         }
         if (repaintTimer != null) {
             repaintTimer.stop();
+        }
+        if (scoreManager != null && scoreManager.isAlive()) {
+            scoreManager.stopThread();
         }
     }
 
