@@ -48,8 +48,6 @@ git clone https://github.com/ConnorOswalt/Securing-Healthcare-with-Deep-Learning
 Step 2.
 
 cd Securing-Healthcare-with-Deep-Learning-A-CNN-Based-Model-for-medical-IoT-Threat-Detection
-or
-cd Sec*
 
 Step 3.
 
