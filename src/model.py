@@ -30,7 +30,7 @@ def create_cnn_model(input_shape, num_classes):
         except RuntimeError as e:
             print("GPU restriction failed:", e)
     else:
-        print("No GPUs available → falling back to CPU")
+        print("No GPUs available -> falling back to CPU")
     
     
     model = Sequential()

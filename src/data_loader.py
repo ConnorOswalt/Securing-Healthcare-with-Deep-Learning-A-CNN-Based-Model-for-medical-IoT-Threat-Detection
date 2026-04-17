@@ -1,11 +1,17 @@
 import pandas as pd
+import numpy as np
+np.random.seed(42)
 from sklearn.preprocessing import LabelEncoder, StandardScaler
 from tensorflow.keras.utils import to_categorical
 from sklearn.model_selection import train_test_split
-import os  
+import os
 
-# Define attack categories
-ATTACK_CATEGORIES_19 = { 
+# Percentage of noise applied to the data while testing
+# Set this to 0.0 for clean runs
+NOISE_LEVEL = .0015
+
+# Define attack categories (Maintains the 2, 6, and 19-class logic)
+ATTACK_CATEGORIES_19 = {
     'ARP_Spoofing': 'Spoofing',
     'MQTT-DDoS-Connect_Flood': 'MQTT-DDoS-Connect_Flood',
     'MQTT-DDoS-Publish_Flood': 'MQTT-DDoS-Publish_Flood',
@@ -27,7 +33,7 @@ ATTACK_CATEGORIES_19 = {
     'Benign': 'Benign'
 }
 
-ATTACK_CATEGORIES_6 = {  
+ATTACK_CATEGORIES_6 = {
     'Spoofing': 'Spoofing',
     'MQTT-DDoS-Connect_Flood': 'MQTT',
     'MQTT-DDoS-Publish_Flood': 'MQTT',
@@ -49,7 +55,7 @@ ATTACK_CATEGORIES_6 = {
     'Benign': 'Benign'
 }
 
-ATTACK_CATEGORIES_2 = {  
+ATTACK_CATEGORIES_2 = {
     'ARP_Spoofing': 'attack',
     'MQTT-DDoS-Connect_Flood': 'attack',
     'MQTT-DDoS-Publish_Flood': 'attack',
@@ -71,27 +77,71 @@ ATTACK_CATEGORIES_2 = {
     'Benign': 'Benign'
 }
 
-def get_attack_category(file_name, class_config): 
-    """Get attack category from file name."""
+
+def get_attack_category(file_name, class_config):
+    """Maps file names to their respective attack labels."""
 
     if class_config == 2:
         categories = ATTACK_CATEGORIES_2
     elif class_config == 6:
         categories = ATTACK_CATEGORIES_6
-    else:  # Default to 19 classes 
-        categories = ATTACK_CATEGORIES_19  
+    else:
+        categories = ATTACK_CATEGORIES_19
 
     for key in categories:
         if key in file_name:
             return categories[key]
-        
-def load_and_preprocess_data(data_dir, class_config):
-    """Load, preprocess, and prepare data for training."""
+    # return "Unknown"
+
+
+def inject_adversarial_noise(df, noise_level=0.10):
+    """Inject Gaussian noise into numeric columns only."""
+    df = df.copy()
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+
+    for col in numeric_cols:
+        std = df[col].std()
+        if pd.isna(std) or std == 0:
+            continue
+        noise = np.random.normal(0, std * noise_level, size=len(df))
+        df[col] = df[col] + noise
+
+    print(f"INSERT: Adversarial noise ({noise_level*100:.1f}%) injected into {len(numeric_cols)} numeric features.")
+    return df
+
+def sample_data(files, fraction, random_state=42):
+    all_data = []
+
+    for f in files:
+        # load individual file
+        df = pd.read_csv(f).assign(file=f)
+
+        # buckets based on rate; q=10, 10 equal-sized buckets (see documentation for qcut)
+        df['Rate_Bucket'] = pd.qcut(df['Rate'], q=10, labels=False, duplicates='drop')
+
+        # perform stratified sampling on these buckets
+        sampled_df = df.groupby('Rate_Bucket').apply(
+            lambda x: x.sample(frac=fraction, random_state=random_state)
+        ).reset_index(drop=True)
+
+        # clean and append
+        if 'Rate_Bucket' in sampled_df.columns:
+            sampled_df = sampled_df.drop(columns=['Rate_Bucket'])
+
+        all_data.append(sampled_df)
+    return pd.concat(all_data, ignore_index=True)
+
+def load_and_preprocess_data(data_dir, class_config, sample_fraction=.1):
+    """Loads data, optionally applies noise, and reshapes data for the 1D CNN."""
+
     train_files = [f"{data_dir}/train/{f}" for f in os.listdir(f"{data_dir}/train") if f.endswith('.csv')]
     test_files = [f"{data_dir}/test/{f}" for f in os.listdir(f"{data_dir}/test") if f.endswith('.csv')]
 
-    train_df = pd.concat([pd.read_csv(f).assign(file=f) for f in train_files], ignore_index=True)
-    test_df = pd.concat([pd.read_csv(f).assign(file=f) for f in test_files], ignore_index=True)
+    train_df = sample_data(train_files, sample_fraction)
+    test_df = sample_data(test_files, sample_fraction)
+
+    if NOISE_LEVEL > 0:
+        test_df = inject_adversarial_noise(test_df, noise_level=NOISE_LEVEL)
 
     train_df['Attack_Type'] = train_df['file'].apply(lambda x: get_attack_category(x, class_config))
     test_df['Attack_Type'] = test_df['file'].apply(lambda x: get_attack_category(x, class_config))
@@ -109,7 +159,11 @@ def load_and_preprocess_data(data_dir, class_config):
     y_test_categorical = to_categorical(y_test_encoded)
 
     X_train, X_val, y_train_categorical, y_val_categorical = train_test_split(
-        X_train, y_train_categorical, test_size=0.2, random_state=42
+        X_train,
+        y_train_categorical,
+        test_size=0.2,
+        random_state=42,
+        stratify=y_train_encoded
     )
 
     scaler = StandardScaler()

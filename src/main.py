@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 import os
 import argparse
 from data_loader import load_and_preprocess_data
@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train and evaluate a CNN for network intrusion detection.")
-    parser.add_argument("--class_config", type=int, choices=[2, 6, 19], default=2,
+    parser.add_argument("--class_config", type=int, choices=[2, 6, 19], default=19,
                         help="Number of classes for classification (2, 6, or 19)")
     args = parser.parse_args()
 
@@ -17,8 +17,12 @@ if __name__ == "__main__":
     data_dir = os.path.join(script_dir, '..', 'data') 
 
     # Pass data_dir to the function:
+    # The third parameter is the percentage of the original data files loaded
     X_train, X_val, X_test, y_train_categorical, y_val_categorical, y_test_categorical, label_encoder = load_and_preprocess_data(
-        data_dir, args.class_config)  # Pass data_dir here 
+        data_dir,
+        args.class_config,
+        1
+        )  # Pass data_dir here 
 
     input_shape = (X_train.shape[1], 1) 
     model = create_cnn_model(input_shape, y_train_categorical.shape[1])
@@ -31,7 +35,8 @@ if __name__ == "__main__":
 
     model = train_model(model, X_train, y_train_categorical, X_val, y_val_categorical)
     
-    model.save(f"cnn_iomt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.keras")
+    # exports model at runtime
+    # model.save(f"cnn_iomt_{datetime.now().strftime('%Y%m%d_%H%M%S')}.keras")
     
     loss, accuracy = model.evaluate(X_test, y_test_categorical)
     print(f"Test Loss: {loss:.4f}")
@@ -48,9 +53,9 @@ if __name__ == "__main__":
     recall = recall_score(y_test_decoded, y_pred, average='weighted')
     f1 = f1_score(y_test_decoded, y_pred, average='weighted')
 
+    print("\nConfusion Matrix:\n", confusion_matrix(y_test_decoded, y_pred))
     print("Accuracy:", accuracy)
     print("Precision:", precision)
     print("Recall:", recall)
     print("F1-Score:", f1)
     print("\nClassification Report:\n", classification_report(y_test_decoded, y_pred))
-    print("\nConfusion Matrix:\n", confusion_matrix(y_test_decoded, y_pred))
