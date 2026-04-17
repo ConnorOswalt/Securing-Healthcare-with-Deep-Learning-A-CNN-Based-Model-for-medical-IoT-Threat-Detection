@@ -1,5 +1,6 @@
 package spaceinvaders;
 
+import spaceinvaders.scores.LeaderboardPanel;
 import javax.swing.JFrame;
 import javax.swing.*;
 
@@ -12,7 +13,16 @@ public class Main {
             frame.add(game);
             frame.setSize(600, 700);
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.setJMenuBar(game.createMenuBar());
+            
+            // Get menu bar and add Scores menu
+            JMenuBar menuBar = game.createMenuBar();
+            JMenu scoresMenu = new JMenu("Scores");
+            JMenuItem viewLeaderboardItem = new JMenuItem("View Leaderboard");
+            viewLeaderboardItem.addActionListener(e -> LeaderboardPanel.showLeaderboard(game.getScoreManager()));
+            scoresMenu.add(viewLeaderboardItem);
+            menuBar.add(scoresMenu);
+            
+            frame.setJMenuBar(menuBar);
             frame.setVisible(true);
         });
     }
