@@ -37,6 +37,8 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private long playerFlashStartTime = 0;
     private static final long PLAYER_FLASH_DURATION = 300;
     private boolean gameOver = false;
+    private long gameOverFlashStartTime = 0;
+    private static final long GAME_OVER_FLASH_DURATION = 500; // Flash for 500ms after game over
 
     // Constructor
     public SpaceInvadersUI() {
@@ -190,12 +192,6 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         repaint();
 
         if (playerHealth <= 0) {
-            String playerName = JOptionPane.showInputDialog(null, 
-                "Game Over! Enter your name for the leaderboard:", 
-                "Player Name");
-            if (playerName != null && !playerName.trim().isEmpty()) {
-                scoreManager.saveScore(playerName.trim());
-            }
             setGameOver(true);
         }
     }
@@ -214,17 +210,22 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public void setGameOver(boolean gameOver) {
         this.gameOver = gameOver;
         if (gameOver) {
+            gameOverFlashStartTime = System.currentTimeMillis(); // Record when game ended
             if (gameCalculator != null) {
                 gameCalculator.stopThread();
             }
-            if (repaintTimer != null) {
-                repaintTimer.stop();
-            }
+            // DON'T stop the repaintTimer - we need it to display the game over screen
             repaint();
         }
     }
 
     private void drawGameOver(Graphics g) {
+        // Draw red flash effect for a short duration after game over
+        if (System.currentTimeMillis() - gameOverFlashStartTime < GAME_OVER_FLASH_DURATION) {
+            g.setColor(new Color(255, 0, 0, 180)); // Semi-transparent red
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+
         g.setColor(Color.RED);
         g.setFont(new Font("Arial", Font.BOLD, 48));
         FontMetrics fm = g.getFontMetrics();
@@ -245,6 +246,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             invaders.clear();
             bullets.clear();
             gameOver = false;
+            gameOverFlashStartTime = 0; // Reset game over flash timer
             playerHealth = 3;
             playerFlashing = false;
             shooter_X_Coordinate = 200;
