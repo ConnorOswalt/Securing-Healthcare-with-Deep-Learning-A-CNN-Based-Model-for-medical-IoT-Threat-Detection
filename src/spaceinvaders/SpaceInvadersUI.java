@@ -142,6 +142,24 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     }
 
     /**
+     * Adds points to the current score.
+     * 
+     * @param points the number of points to add
+     */
+    public void addPoints(int points) {
+        scoreManager.addPoints(points);
+    }
+
+    /**
+     * Gets the ScoreManager instance.
+     * 
+     * @return the ScoreManager
+     */
+    public ScoreManager getScoreManager() {
+        return scoreManager;
+    }
+
+    /**
      * Gracefully shuts down the game calculator thread and stops the repaint timer.
      * Call this before closing the application.
      */
