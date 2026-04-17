@@ -88,4 +88,14 @@ public class PaintingActions {
             g.fillRect(0, 0, game.getWidth(), game.getHeight());
         }
     }
+
+    public void drawCurrentScore(Graphics g, SpaceInvadersUI game) {
+        int score = game.getScoreManager().getCurrentScore();
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 14));
+        String scoreText = String.format("Score: %03d", score);
+        FontMetrics fm = g.getFontMetrics();
+        int textWidth = fm.stringWidth(scoreText);
+        g.drawString(scoreText, game.getWidth() - textWidth - 10, 20);
+    }
 }
