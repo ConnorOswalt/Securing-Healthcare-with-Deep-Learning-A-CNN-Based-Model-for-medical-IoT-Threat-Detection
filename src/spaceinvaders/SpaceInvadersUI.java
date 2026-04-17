@@ -37,8 +37,6 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private long playerFlashStartTime = 0;
     private static final long PLAYER_FLASH_DURATION = 300;
     private boolean gameOver = false;
-    private long lastDamageTime = 0;
-    private static final long DAMAGE_COOLDOWN = 500; // 500ms between damage hits
 
     // Constructor
     public SpaceInvadersUI() {
