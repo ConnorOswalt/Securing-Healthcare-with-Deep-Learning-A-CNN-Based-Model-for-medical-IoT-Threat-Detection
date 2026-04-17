@@ -197,6 +197,17 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         }
     }
 
+    public boolean isPlayerFlashing() {
+        if (playerFlashing && System.currentTimeMillis() - playerFlashStartTime > PLAYER_FLASH_DURATION) {
+            playerFlashing = false;
+        }
+        return playerFlashing;
+    }
+
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
    
         gameCalculator = new GameCalculator(this);
         gameCalculator.start();
