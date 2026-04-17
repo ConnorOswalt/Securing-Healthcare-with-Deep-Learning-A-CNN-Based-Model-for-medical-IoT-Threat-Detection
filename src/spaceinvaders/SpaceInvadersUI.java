@@ -23,6 +23,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public ArrayList<Bullet> bullets;
     public Random random;
     public boolean moveLeft, moveRight;
+    public boolean firing;
     private final ListenerActions listenerActions;
     public final ImageSelection imageSelection;
     private final PaintingActions paintingActions;
@@ -52,6 +53,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         random = new Random();
         moveLeft = false;
         moveRight = false;
+        firing = false;
         listenerActions = new ListenerActions();
         imageSelection = new ImageSelection();
         paintingActions = new PaintingActions();
@@ -210,6 +212,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public void setGameOver(boolean gameOver) {
         this.gameOver = gameOver;
         if (gameOver) {
+            firing = false;
             gameOverFlashStartTime = System.currentTimeMillis(); // Record when game ended
             if (gameCalculator != null) {
                 gameCalculator.stopThread();
@@ -252,6 +255,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             shooter_X_Coordinate = 200;
             moveLeft = false;
             moveRight = false;
+            firing = false;
         }
 
         gameCalculator = new GameCalculator(this);

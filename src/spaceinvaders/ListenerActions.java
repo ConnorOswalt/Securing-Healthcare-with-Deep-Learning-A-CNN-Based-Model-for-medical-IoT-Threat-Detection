@@ -2,8 +2,6 @@ package spaceinvaders;
 
 import spaceinvaders.JMenus.MenuImplementations.InvaderImplementation;
 import spaceinvaders.JMenus.MenuImplementations.ShooterImplementation;
-import spaceinvaders.characters.Bullet;
-import spaceinvaders.characters.Invader;
 
 import java.awt.event.*;
 import javax.swing.JOptionPane;
@@ -30,13 +28,7 @@ public class ListenerActions {
             game.moveRight = true;
         }
         if (key == KeyEvent.VK_SPACE) {
-            synchronized (game) {
-                int shooter_X_Coordinate = game.getShooter_X_Coordinate();
-                int shooter_width = game.getShooterWidth();
-                int shooter_height = game.getShooterHeight();
-                game.bullets.add(
-                        new Bullet(shooter_X_Coordinate + shooter_width / 2, game.getHeight() - shooter_height));
-            }
+            game.firing = true;
         }
         if (key == KeyEvent.VK_R && game.isGameOver()) {
             // Prompt for player name before restarting
@@ -64,6 +56,9 @@ public class ListenerActions {
         }
         if (key == KeyEvent.VK_RIGHT) {
             game.moveRight = false;
+        }
+        if (key == KeyEvent.VK_SPACE) {
+            game.firing = false;
         }
     }
 

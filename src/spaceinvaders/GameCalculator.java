@@ -18,6 +18,8 @@ public class GameCalculator extends Thread {
     private final SpaceInvadersUI game;
     private volatile boolean running = true;
     private static final long UPDATE_INTERVAL_MS = 20; // Same as original timer interval
+    private static final long FIRE_INTERVAL_MS = 150;
+    private long lastFireTimeMs = 0;
 
     public GameCalculator(SpaceInvadersUI game) {
         this.game = game;
@@ -50,10 +52,30 @@ public class GameCalculator extends Thread {
 
     private void updateGameState() {
         updateShooterPosition();
+        updateContinuousFire();
         updateInvaderPositions();
         updateBulletPositions();
         checkCollisions();
         spawnNewInvaders();
+    }
+
+    private void updateContinuousFire() {
+        synchronized (game) {
+            if (!game.firing || game.isGameOver()) {
+                return;
+            }
+
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastFireTimeMs < FIRE_INTERVAL_MS) {
+                return;
+            }
+
+            int shooterX = game.getShooter_X_Coordinate();
+            int shooterWidth = game.getShooterWidth();
+            int shooterHeight = game.getShooterHeight();
+            game.bullets.add(new Bullet(shooterX + shooterWidth / 2, game.getHeight() - shooterHeight));
+            lastFireTimeMs = currentTime;
+        }
     }
 
     private void updateShooterPosition() {
