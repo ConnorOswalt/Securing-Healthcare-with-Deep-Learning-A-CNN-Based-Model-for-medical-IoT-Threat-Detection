@@ -66,5 +66,24 @@ public class LeaderboardPanel extends JPanel {
         }
     }
 
-    
+    /**
+     * Opens the leaderboard in a new JDialog centered on screen.
+     * 
+     * @param manager the ScoreManager to display leaderboard from
+     */
+    public static void showLeaderboard(ScoreManager manager) {
+        JDialog dialog = new JDialog();
+        dialog.setTitle("High Scores");
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+        dialog.setSize(400, 400);
+        dialog.setLocationRelativeTo(null); // Center on screen
+        dialog.setResizable(true);
+        dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+
+        // Add the leaderboard panel
+        LeaderboardPanel panel = new LeaderboardPanel(manager);
+        dialog.add(panel);
+
+        dialog.setVisible(true);
+    }
 }
