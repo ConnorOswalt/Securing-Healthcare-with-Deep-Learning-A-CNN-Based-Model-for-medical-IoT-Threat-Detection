@@ -122,6 +122,7 @@ public class GameCalculator extends Thread {
                                     invader.getSize()))) {
                         bulletIterator.remove();
                         invaderIterator.remove();
+                        game.addPoints(10);
                         break;
                     }
                 }
