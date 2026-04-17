@@ -26,7 +26,7 @@ public class ParentMenu extends JMenu {
             });
             
             // Set path for the first 3 buttons if available
-            if (i < 3 && i < buttonPaths.size()) {
+            if (i < buttonPaths.size()) {
                 item.setName(buttonPaths.get(i));
             }
             
