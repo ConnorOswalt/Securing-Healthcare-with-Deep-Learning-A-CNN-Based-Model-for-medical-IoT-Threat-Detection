@@ -176,7 +176,28 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         return playerHealth;
     }
 
-    
+    public void damagePlayer() {
+        if (playerHealth <= 0 || gameOver) {
+            return;
+        }
+
+        playerHealth--;
+        playerFlashing = true;
+        playerFlashStartTime = System.currentTimeMillis();
+        repaint();
+
+        if (playerHealth <= 0) {
+            String playerName = JOptionPane.showInputDialog(null, 
+                "Game Over! Enter your name for the leaderboard:", 
+                "Player Name");
+            if (playerName != null && !playerName.trim().isEmpty()) {
+                scoreManager.saveScore(playerName.trim());
+            }
+            setGameOver(true);
+        }
+    }
+
+   
         gameCalculator = new GameCalculator(this);
         gameCalculator.start();
         scoreManager.start();
