@@ -110,6 +110,7 @@ public class GameCalculator extends Thread {
 
     private void checkCollisions() {
         synchronized (game) {
+            // Check bullet-invader collisions
             Iterator<Bullet> bulletIterator = game.bullets.iterator();
             while (bulletIterator.hasNext()) {
                 Bullet bullet = bulletIterator.next();
@@ -121,7 +122,30 @@ public class GameCalculator extends Thread {
                                     invader.getSize()))) {
                         bulletIterator.remove();
                         invaderIterator.remove();
+                        game.addPoints(10);
                         break;
+                    }
+                }
+            }
+
+            // Check shooter-invader collisions
+            if (!game.isGameOver()) {
+                int shooterX = game.getShooter_X_Coordinate();
+                int shooterY = game.getHeight() - game.getShooterHeight();
+                int shooterWidth = game.getShooterWidth();
+                int shooterHeight = game.getShooterHeight();
+
+                Rectangle shooterRect = new Rectangle(shooterX, shooterY, shooterWidth, shooterHeight);
+
+                Iterator<Invader> invaderIterator = game.invaders.iterator();
+                while (invaderIterator.hasNext()) {
+                    Invader invader = invaderIterator.next();
+                    Rectangle invaderRect = new Rectangle(invader.getX(), invader.getY(),
+                            invader.getSize(), invader.getSize());
+                    if (shooterRect.intersects(invaderRect)) {
+                        invaderIterator.remove();
+                        game.damagePlayer();
+                        break; // Only one collision per frame
                     }
                 }
             }

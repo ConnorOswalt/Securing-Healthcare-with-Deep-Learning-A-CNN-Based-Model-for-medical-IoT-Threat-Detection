@@ -57,4 +57,45 @@ public class PaintingActions {
             g.fillPolygon(xPoints, yPoints, 3);
         }
     }
+
+    public void drawPlayerHealth(Graphics g, SpaceInvadersUI game) {
+        int playerHealth = game.getPlayerHealth();
+        int heartSize = 16;
+        int startX = 10;
+        int startY = 10;
+
+        g.setFont(new Font("Arial", Font.BOLD, 14));
+        g.setColor(Color.WHITE);
+        g.drawString("Player Hearts:", startX, startY + heartSize);
+
+        for (int i = 0; i < 3; i++) {
+            int x = startX + i * (heartSize + 10);
+            int y = startY + 20;
+            if (i < playerHealth) {
+                g.setColor(Color.RED);
+            } else {
+                g.setColor(Color.GRAY);
+            }
+
+            int[] xPoints = {x + heartSize/2, x, x + heartSize/4, x + heartSize/2, x + 3*heartSize/4, x + heartSize};
+            int[] yPoints = {y + heartSize, y + heartSize/2, y, y, y, y + heartSize/2};
+            g.fillPolygon(xPoints, yPoints, 6);
+        }
+
+        // Draw flashing effect when player is hit
+        if (game.isPlayerFlashing()) {
+            g.setColor(new Color(255, 0, 0, 128)); // Semi-transparent red
+            g.fillRect(0, 0, game.getWidth(), game.getHeight());
+        }
+    }
+
+    public void drawCurrentScore(Graphics g, SpaceInvadersUI game) {
+        int score = game.getScoreManager().getCurrentScore();
+        g.setColor(Color.WHITE);
+        g.setFont(new Font("Arial", Font.BOLD, 14));
+        String scoreText = String.format("Score: %03d", score);
+        FontMetrics fm = g.getFontMetrics();
+        int textWidth = fm.stringWidth(scoreText);
+        g.drawString(scoreText, game.getWidth() - textWidth - 10, 20);
+    }
 }

@@ -1,5 +1,6 @@
 package spaceinvaders;
 
+import spaceinvaders.scores.ScoreManager;
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Invader;
 import spaceinvaders.JMenus.ParentMenu;
@@ -30,6 +31,14 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private int shooter_X_Coordinate = 200;
     private GameCalculator gameCalculator;
     public static int breakpointcounter = 0;
+    private ScoreManager scoreManager;
+    private int playerHealth = 3;
+    private boolean playerFlashing = false;
+    private long playerFlashStartTime = 0;
+    private static final long PLAYER_FLASH_DURATION = 300;
+    private boolean gameOver = false;
+    private long gameOverFlashStartTime = 0;
+    private static final long GAME_OVER_FLASH_DURATION = 500; // Flash for 500ms after game over
 
     // Constructor
     public SpaceInvadersUI() {
@@ -46,6 +55,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         listenerActions = new ListenerActions();
         imageSelection = new ImageSelection();
         paintingActions = new PaintingActions();
+        scoreManager = new ScoreManager();
         // For debugging
 
         // Set images
@@ -62,6 +72,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
                     // Now that UI is initialized, start the game calculator thread
                     gameCalculator = new GameCalculator(SpaceInvadersUI.this);
                     gameCalculator.start();
+                    scoreManager.start(); // Start the score manager thread
                     removeComponentListener(this); // Remove listener after starting
                 }
             }
@@ -98,6 +109,11 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         super.paintComponent(g);
         setBackground(Color.BLACK);
 
+        if (gameOver) {
+            drawGameOver(g);
+            return;
+        }
+
         // Draw shooter (rectangle)
         paintingActions.drawShooter(g, this);
 
@@ -106,6 +122,12 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         // Draw bullets (bullets)
         paintingActions.drawBullets(g, this);
+
+        // Draw player health hearts
+        paintingActions.drawPlayerHealth(g, this);
+
+        // Draw current score
+        paintingActions.drawCurrentScore(g, this);
     }
 
     public int getShooterWidth() {
@@ -138,6 +160,107 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     }
 
     /**
+     * Adds points to the current score.
+     * 
+     * @param points the number of points to add
+     */
+    public void addPoints(int points) {
+        scoreManager.addPoints(points);
+    }
+
+    /**
+     * Gets the ScoreManager instance.
+     * 
+     * @return the ScoreManager
+     */
+    public ScoreManager getScoreManager() {
+        return scoreManager;
+    }
+
+    public int getPlayerHealth() {
+        return playerHealth;
+    }
+
+    public void damagePlayer() {
+        if (playerHealth <= 0 || gameOver) {
+            return;
+        }
+
+        playerHealth--;
+        playerFlashing = true;
+        playerFlashStartTime = System.currentTimeMillis();
+        repaint();
+
+        if (playerHealth <= 0) {
+            setGameOver(true);
+        }
+    }
+
+    public boolean isPlayerFlashing() {
+        if (playerFlashing && System.currentTimeMillis() - playerFlashStartTime > PLAYER_FLASH_DURATION) {
+            playerFlashing = false;
+        }
+        return playerFlashing;
+    }
+
+    public boolean isGameOver() {
+        return gameOver;
+    }
+
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
+        if (gameOver) {
+            gameOverFlashStartTime = System.currentTimeMillis(); // Record when game ended
+            if (gameCalculator != null) {
+                gameCalculator.stopThread();
+            }
+            // DON'T stop the repaintTimer - we need it to display the game over screen
+            repaint();
+        }
+    }
+
+    private void drawGameOver(Graphics g) {
+        // Draw red flash effect for a short duration after game over
+        if (System.currentTimeMillis() - gameOverFlashStartTime < GAME_OVER_FLASH_DURATION) {
+            g.setColor(new Color(255, 0, 0, 180)); // Semi-transparent red
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+
+        g.setColor(Color.RED);
+        g.setFont(new Font("Arial", Font.BOLD, 48));
+        FontMetrics fm = g.getFontMetrics();
+        String gameOverText = "GAME OVER";
+        int textWidth = fm.stringWidth(gameOverText);
+        int textHeight = fm.getAscent();
+        g.drawString(gameOverText, (getWidth() - textWidth) / 2, (getHeight() + textHeight) / 2);
+
+        g.setFont(new Font("Arial", Font.PLAIN, 24));
+        fm = g.getFontMetrics();
+        String restartText = "Press R to restart";
+        textWidth = fm.stringWidth(restartText);
+        g.drawString(restartText, (getWidth() - textWidth) / 2, (getHeight() + textHeight) / 2 + 60);
+    }
+
+    public void restartGame() {
+        synchronized (this) {
+            invaders.clear();
+            bullets.clear();
+            gameOver = false;
+            gameOverFlashStartTime = 0; // Reset game over flash timer
+            playerHealth = 3;
+            playerFlashing = false;
+            shooter_X_Coordinate = 200;
+            moveLeft = false;
+            moveRight = false;
+        }
+
+        gameCalculator = new GameCalculator(this);
+        gameCalculator.start();
+        scoreManager.start();
+        repaintTimer.start();
+    }
+
+    /**
      * Gracefully shuts down the game calculator thread and stops the repaint timer.
      * Call this before closing the application.
      */
@@ -147,6 +270,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         }
         if (repaintTimer != null) {
             repaintTimer.stop();
+        }
+        if (scoreManager != null && scoreManager.isAlive()) {
+            scoreManager.stopThread();
         }
     }
 
