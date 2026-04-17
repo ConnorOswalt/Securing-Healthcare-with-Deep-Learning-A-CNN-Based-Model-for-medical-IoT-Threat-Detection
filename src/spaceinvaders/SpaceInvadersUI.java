@@ -123,6 +123,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         // Draw player health hearts
         paintingActions.drawPlayerHealth(g, this);
+
+        // Draw current score
+        paintingActions.drawCurrentScore(g, this);
     }
 
     public int getShooterWidth() {
