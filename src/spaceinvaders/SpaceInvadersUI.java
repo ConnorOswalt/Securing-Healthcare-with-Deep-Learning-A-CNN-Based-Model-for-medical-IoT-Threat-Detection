@@ -208,7 +208,47 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         return gameOver;
     }
 
-   
+    public void setGameOver(boolean gameOver) {
+        this.gameOver = gameOver;
+        if (gameOver) {
+            if (gameCalculator != null) {
+                gameCalculator.stopThread();
+            }
+            if (repaintTimer != null) {
+                repaintTimer.stop();
+            }
+            repaint();
+        }
+    }
+
+    private void drawGameOver(Graphics g) {
+        g.setColor(Color.RED);
+        g.setFont(new Font("Arial", Font.BOLD, 48));
+        FontMetrics fm = g.getFontMetrics();
+        String gameOverText = "GAME OVER";
+        int textWidth = fm.stringWidth(gameOverText);
+        int textHeight = fm.getAscent();
+        g.drawString(gameOverText, (getWidth() - textWidth) / 2, (getHeight() + textHeight) / 2);
+
+        g.setFont(new Font("Arial", Font.PLAIN, 24));
+        fm = g.getFontMetrics();
+        String restartText = "Press R to restart";
+        textWidth = fm.stringWidth(restartText);
+        g.drawString(restartText, (getWidth() - textWidth) / 2, (getHeight() + textHeight) / 2 + 60);
+    }
+
+    public void restartGame() {
+        synchronized (this) {
+            invaders.clear();
+            bullets.clear();
+            gameOver = false;
+            playerHealth = 3;
+            playerFlashing = false;
+            shooter_X_Coordinate = 200;
+            moveLeft = false;
+            moveRight = false;
+        }
+
         gameCalculator = new GameCalculator(this);
         gameCalculator.start();
         scoreManager.start();
