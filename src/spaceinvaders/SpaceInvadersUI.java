@@ -32,6 +32,13 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private GameCalculator gameCalculator;
     public static int breakpointcounter = 0;
     private ScoreManager scoreManager;
+    private int playerHealth = 3;
+    private boolean playerFlashing = false;
+    private long playerFlashStartTime = 0;
+    private static final long PLAYER_FLASH_DURATION = 300;
+    private boolean gameOver = false;
+    private long lastDamageTime = 0;
+    private static final long DAMAGE_COOLDOWN = 500; // 500ms between damage hits
 
     // Constructor
     public SpaceInvadersUI() {
@@ -102,6 +109,11 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         super.paintComponent(g);
         setBackground(Color.BLACK);
 
+        if (gameOver) {
+            drawGameOver(g);
+            return;
+        }
+
         // Draw shooter (rectangle)
         paintingActions.drawShooter(g, this);
 
@@ -110,6 +122,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         // Draw bullets (bullets)
         paintingActions.drawBullets(g, this);
+
+        // Draw player health hearts
+        paintingActions.drawPlayerHealth(g, this);
     }
 
     public int getShooterWidth() {
@@ -157,6 +172,17 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
      */
     public ScoreManager getScoreManager() {
         return scoreManager;
+    }
+
+    public int getPlayerHealth() {
+        return playerHealth;
+    }
+
+    
+        gameCalculator = new GameCalculator(this);
+        gameCalculator.start();
+        scoreManager.start();
+        repaintTimer.start();
     }
 
     /**
