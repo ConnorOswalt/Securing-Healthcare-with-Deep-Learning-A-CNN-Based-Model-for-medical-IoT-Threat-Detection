@@ -5,10 +5,10 @@
 [![IEEE Conference](https://img.shields.io/badge/IEEE-ICIS%202024-blue.svg)](https://doi.org/10.1109/ICIS64839.2024.10887510)
 [![arXiv](https://img.shields.io/badge/arXiv-2410.23306-b31b1b.svg)](https://arxiv.org/abs/2410.23306)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.7 - 3.12](https://img.shields.io/badge/python-3.7_to_3.12-blue.svg)](https://www.python.org/downloads/)
 [![GPU Optimized](https://img.shields.io/badge/GPU-RTX%205070%20Ti-success.svg)](https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/)
 
-**Fork & Improvement Project** — Building on the original work for higher accuracy and expanded capabilities
+**Fork & Improvement Project** — Testing the robustness of the original model.
 
 </div>
 
@@ -18,20 +18,57 @@
 
 This repository is my personal fork and active improvement project based on the original implementation by Alireza Mohamadiam et al. (presented at ICIS 2024 and available at [original repo](https://github.com/alirezamohamadiam/Securing-Healthcare-with-Deep-Learning-A-CNN-Based-Model-for-medical-IoT-Threat-Detection)).
 
-**My Goals & Changes:**
-- Achieve even higher per-class accuracy, especially on minority attack types (Recon variants, certain MQTT sub-classes, Spoofing) where the original model shows lower F1 scores.
-- Address class imbalance more effectively (class weights, SMOTE experimentation, focal loss exploration).
-- Expand the model architecture (adding LSTM/GRU, attention mechanisms, hybrid ensembles).
-- Optimize for modern hardware (RTX 5070 Ti Blackwell GPU in WSL2/Docker) with larger batch sizes (512–2048+), mixed precision, and tf.data pipelines for higher GPU utilization.
-- Improve reproducibility: better model saving with unique filenames (including --class_config), checkpoints, and logging.
-- Explore transfer learning to other IoT/medical datasets (e.g., TON_IoT, Edge-IIoTset, PhysioNet ECG anomalies).
+## Archaeology
 
-The model continues to use the **CICIoMT2024** dataset (multi-protocol IoMT benchmark with Wi-Fi, MQTT, Bluetooth attacks on 40 devices) and supports 2-class (binary), 6-class, and 19-class classification.
+(Past Research) Paper referenced by our selected paper:
 
-**Current Best Results (my runs on RTX 5070 Ti):**
-- Weighted F1 ~0.986–0.99
-- Macro F1 improvements targeted on minorities
-- Near 90%+ GPU utilization with tuned batch sizes
+Liu, Y., & Latih, R. (2024). A Comprehensive Review of Machine
+Learning Approaches for Detecting Malicious Software. International
+Journal on Advanced Science, Engineering and Information
+Technology.
+https://ijaseit.insightsociety.org/index.php/ijaseit/article/view/19993
+
+
+(Further Research) Paper that references our selected paper:
+
+P. Choubey, Q. Shi, Z. Yang, B. Terry, S. Shao and T. Lei, "Deep Isolation Forest-based Anomaly Behavior Analysis for Internet of Medical Things," 2025 Cyber Awareness and Research Symposium (CARS), Grand Forks, ND, USA, 2025, pp. 1-7, doi: 10.1109/CARS67163.2025.11337811.
+https://ieeexplore.ieee.org/abstract/document/11337811?casa_token=j1IvUF2fBAMAAAAA:DHyfA9JCi0G8Tt8OaqGYgFvOYA6nf7i6R_ULYhjnGeMA1gUDKq_g0FoOFS-RI_nC_ssJ2XS5VQ
+
+## Run Instructions
+
+required:
+git
+python 3.7 to 3.12 (not older or newer)
+unix command line interface
+
+Step 1. Clone this repository
+
+git clone https://github.com/ConnorOswalt/Securing-Healthcare-with-Deep-Learning-A-CNN-Based-Model-for-medical-IoT-Threat-Detection.git
+
+Step 2.
+
+cd Securing-Healthcare-with-Deep-Learning-A-CNN-Based-Model-for-medical-IoT-Threat-Detection
+or
+cd Sec*
+
+Step 3.
+
+replace /data with the stratified toy dataset (which is 20% of the original database, CiCIoMT2024):
+https://www.dropbox.com/scl/fi/hq6lnx9wm6byh2nfjyk3k/CiCIoMT2024_Sample.zip?rlkey=6vpzh5nmamd5egf4tweut1chc&st=tyqhseaj&dl=0
+
+Step 4. Install dependencies
+
+pip install -r requirements.txt
+
+Step 5.
+
+cd src
+
+Step 6. Run the program:
+
+python main.py --class_config 19
+
+Note: To change the level of noise inserted during the test phase, change NOISE_LEVEL in data_loader.py line 11 to a number between 0.0 and 1.0
 
 ---
 
