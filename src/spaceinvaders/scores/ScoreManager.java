@@ -78,6 +78,14 @@ public class ScoreManager extends Thread {
         fileHandler.saveScores(leaderboard);
     }
 
+    /**
+     * Gets a copy of the current leaderboard.
+     * 
+     * @return a copy of the leaderboard list
+     */
+    public synchronized List<ScoreEntry> getLeaderboard() {
+        return new ArrayList<>(leaderboard);
+    }
 
     /**
      * Stops the score manager thread.
