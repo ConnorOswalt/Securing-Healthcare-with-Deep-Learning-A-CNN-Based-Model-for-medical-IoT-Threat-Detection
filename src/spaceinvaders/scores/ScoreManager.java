@@ -55,7 +55,29 @@ public class ScoreManager extends Thread {
         currentScore = 0;
     }
 
-   
+    /**
+     * Saves the current score to the leaderboard with the player's name.
+     * Keeps only the top 10 scores and writes to file.
+     * 
+     * @param playerName the name of the player
+     */
+    public synchronized void saveScore(String playerName) {
+        // Add new score entry
+        ScoreEntry newEntry = new ScoreEntry(playerName, currentScore);
+        leaderboard.add(newEntry);
+        
+        // Sort by score descending
+        leaderboard.sort((a, b) -> Integer.compare(b.getScore(), a.getScore()));
+        
+        // Keep only top 10 entries
+        if (leaderboard.size() > 10) {
+            leaderboard = new ArrayList<>(leaderboard.subList(0, 10));
+        }
+        
+        // Write to file
+        fileHandler.saveScores(leaderboard);
+    }
+
 
     /**
      * Stops the score manager thread.
