@@ -73,21 +73,18 @@ public class GameCalculator extends Thread {
         }
     }
 
-    private void updateContinuousFire() {
+    private void handleShooting() {
         synchronized (game) {
-            if (!game.firing || game.isGameOver()) {
+            if (game.isGameOver() || !game.fireHeld) {
                 return;
             }
 
-            long currentTime = System.currentTimeMillis();
-    private void handleShooting() {
-            if (game.isGameOver() || !game.fireHeld) {
-                if (game.isGameOver() || !game.fireHeld) {
-            }
-
             long now = System.currentTimeMillis();
+            if (now - lastFireTimeMs < FIRE_INTERVAL_MS) {
+                return;
             }
 
+            int shooterX = game.getShooter_X_Coordinate();
             int shooterWidth = game.getShooterWidth();
             int shooterHeight = game.getShooterHeight();
             game.bullets.add(new Bullet(shooterX + shooterWidth / 2, game.getHeight() - shooterHeight));
