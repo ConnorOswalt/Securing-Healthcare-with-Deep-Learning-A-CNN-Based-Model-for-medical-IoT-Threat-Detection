@@ -8,6 +8,9 @@ import java.util.List;
 public class LeaderboardPanel extends JPanel {
     private ScoreManager scoreManager;
     private JTable leaderboardTable;
+    private DefaultTableModel tableModel;
+    private Timer refreshTimer;
+    private JLabel noScoresLabel;
 
     public LeaderboardPanel(ScoreManager scoreManager) {
         this.scoreManager = scoreManager;
@@ -122,12 +125,22 @@ public class LeaderboardPanel extends JPanel {
         dialog.setSize(400, 400);
         dialog.setLocationRelativeTo(null); // Center on screen
         dialog.setResizable(true);
-        dialog.setModalityType(Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setModalityType(Dialog.ModalityType.MODELESS); // Non-modal so game can continue
 
         // Add the leaderboard panel
         LeaderboardPanel panel = new LeaderboardPanel(manager);
+        
+        // Stop the refresh timer when dialog is closed
+        dialog.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosed(java.awt.event.WindowEvent e) {
+                if (panel.refreshTimer != null) {
+                    panel.refreshTimer.stop();
+                }
+            }
+        });
+        
         dialog.add(panel);
-
         dialog.setVisible(true);
     }
 }
