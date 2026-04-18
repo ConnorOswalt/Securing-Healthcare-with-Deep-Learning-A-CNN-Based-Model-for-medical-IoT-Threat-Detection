@@ -17,6 +17,9 @@ import javax.imageio.ImageIO;
  * Reads shared game state safely using synchronized access.
  */
 public class PaintingActions {
+    private String cachedBulletPath;
+    private Image cachedBulletImage;
+
     public PaintingActions() {
 
     }
@@ -54,9 +57,18 @@ public class PaintingActions {
 
         String selectedType = BulletImplementation.getSelectedBulletType();
         String selectedPath = BulletImplementation.getSelectedBulletPath();
+        String mode = selectedType == null ? "Triangle" : selectedType;
+
+        Image bulletImage = null;
+        if (!"Triangle".equals(mode) && !"Circle".equals(mode)) {
+            try {
+                bulletImage = loadBulletImage(selectedPath);
+            } catch (IOException | IllegalArgumentException e) {
+                bulletImage = null;
+            }
+        }
 
         for (Bullet bullet : bulletsCopy) {
-            String mode = selectedType == null ? "Triangle" : selectedType;
             switch (mode) {
                 case "Triangle":
                     g.setColor(Color.YELLOW);
@@ -69,18 +81,13 @@ public class PaintingActions {
                     g.fillOval(bullet.getX() - 5, bullet.getY(), 10, 10);
                     break;
                 default:
-                    try {
-                        Image bulletImage = loadBulletImage(selectedPath);
-                        if (bulletImage != null) {
-                            int drawWidth = 24;
-                            int drawHeight = 32;
-                            int drawX = bullet.getX() - (drawWidth / 2);
-                            int drawY = bullet.getY() - drawHeight;
-                            g.drawImage(bulletImage, drawX, drawY, drawWidth, drawHeight, game);
-                            break;
-                        }
-                    } catch (IOException | IllegalArgumentException e) {
-                        // Fall back to triangle if image cannot be loaded.
+                    if (bulletImage != null) {
+                        int drawWidth = 24;
+                        int drawHeight = 32;
+                        int drawX = bullet.getX() - (drawWidth / 2);
+                        int drawY = bullet.getY() - drawHeight;
+                        g.drawImage(bulletImage, drawX, drawY, drawWidth, drawHeight, game);
+                        break;
                     }
 
                     g.setColor(Color.YELLOW);
@@ -94,8 +101,16 @@ public class PaintingActions {
 
     private Image loadBulletImage(String selectedPath) throws IOException {
         if (selectedPath == null || selectedPath.isBlank()) {
+            cachedBulletPath = null;
+            cachedBulletImage = null;
             return null;
         }
+
+        if (selectedPath.equals(cachedBulletPath)) {
+            return cachedBulletImage;
+        }
+
+        Image loadedImage = null;
 
         // Try classpath lookup first.
         java.net.URL resourceUrl = PaintingActions.class.getResource(selectedPath);
@@ -103,7 +118,10 @@ public class PaintingActions {
             resourceUrl = PaintingActions.class.getClassLoader().getResource(selectedPath.substring(1));
         }
         if (resourceUrl != null) {
-            return ImageIO.read(resourceUrl);
+            loadedImage = ImageIO.read(resourceUrl);
+            cachedBulletPath = selectedPath;
+            cachedBulletImage = loadedImage;
+            return loadedImage;
         }
 
         // Fallback for runs where resources are not copied to output folder.
@@ -114,10 +132,12 @@ public class PaintingActions {
 
         File sourceResourceFile = new File("src", normalized);
         if (sourceResourceFile.exists()) {
-            return ImageIO.read(sourceResourceFile);
+            loadedImage = ImageIO.read(sourceResourceFile);
         }
 
-        return null;
+        cachedBulletPath = selectedPath;
+        cachedBulletImage = loadedImage;
+        return loadedImage;
     }
 
     public void drawPlayerHealth(Graphics g, SpaceInvadersUI game) {
