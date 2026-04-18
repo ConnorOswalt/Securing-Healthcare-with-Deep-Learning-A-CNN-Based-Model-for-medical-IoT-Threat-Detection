@@ -11,6 +11,7 @@ import spaceinvaders.JMenus.BulletMenu;
 import spaceinvaders.JMenus.MusicMenu;
 import spaceinvaders.JMenus.BackgroundMenu;
 import spaceinvaders.JMenus.EffectsMenu;
+import spaceinvaders.JMenus.ThemesMenu;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -172,6 +173,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         menuBar.add(new MusicMenu());
         menuBar.add(new BackgroundMenu());
         menuBar.add(new EffectsMenu());
+        menuBar.add(new ThemesMenu());
         return menuBar;
     }
 

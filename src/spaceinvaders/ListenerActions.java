@@ -6,6 +6,7 @@ import spaceinvaders.JMenus.MenuImplementations.EffectsImplementation;
 import spaceinvaders.JMenus.MenuImplementations.InvaderImplementation;
 import spaceinvaders.JMenus.MenuImplementations.MusicImplementation;
 import spaceinvaders.JMenus.MenuImplementations.ShooterImplementation;
+import spaceinvaders.JMenus.MenuImplementations.ThemeImplementation;
 
 import java.awt.event.*;
 import javax.swing.JOptionPane;
@@ -25,6 +26,7 @@ public class ListenerActions {
     private final MusicImplementation musicImplementation = new MusicImplementation();
     private final BackgroundImplementation backgroundImplementation = new BackgroundImplementation();
     private final EffectsImplementation effectsImplementation = new EffectsImplementation();
+    private final ThemeImplementation themeImplementation = new ThemeImplementation();
 
 
     public void keyPressed(KeyEvent e, SpaceInvadersUI game) {
@@ -92,5 +94,9 @@ public class ListenerActions {
 
     public ActionListener effectsMenuListener() {
         return e -> effectsImplementation.handleEffectsSelection(e);
+    }
+
+    public ActionListener themesMenuListener() {
+        return e -> themeImplementation.handleThemeSelection(e);
     }
 }

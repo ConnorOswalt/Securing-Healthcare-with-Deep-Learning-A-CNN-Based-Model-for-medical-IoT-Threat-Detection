@@ -51,7 +51,7 @@ public class ParentMenu extends JMenu {
                         || lower.endsWith(".jpg") || lower.endsWith(".jpeg")
                         || lower.endsWith(".mp3") || lower.endsWith(".wav")
                         || lower.endsWith(".ogg") || lower.endsWith(".mid")
-                        || lower.endsWith(".midi");
+                    || lower.endsWith(".midi") || lower.endsWith(".json");
             });
             if (files == null) return;
             Arrays.sort(files, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));

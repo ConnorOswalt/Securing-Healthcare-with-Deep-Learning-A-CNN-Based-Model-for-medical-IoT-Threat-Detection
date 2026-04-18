@@ -1,0 +1,8 @@
+{
+  "name": "Retro",
+  "shooter": "/resources/Shooter/Retro.png",
+  "invader": "/resources/Invader/Retro.png",
+  "bullet": "/resources/Bullet/retroProjectile.gif",
+  "background": "/resources/Background/Retro.gif",
+  "music": "/resources/Music/Retro.wav"
+}
