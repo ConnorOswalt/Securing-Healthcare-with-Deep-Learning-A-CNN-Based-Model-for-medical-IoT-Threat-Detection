@@ -48,7 +48,10 @@ public class ParentMenu extends JMenu {
             File[] files = dir.listFiles((d, name) -> {
                 String lower = name.toLowerCase();
                 return lower.endsWith(".png") || lower.endsWith(".gif")
-                        || lower.endsWith(".jpg") || lower.endsWith(".jpeg");
+                        || lower.endsWith(".jpg") || lower.endsWith(".jpeg")
+                        || lower.endsWith(".mp3") || lower.endsWith(".wav")
+                        || lower.endsWith(".ogg") || lower.endsWith(".mid")
+                        || lower.endsWith(".midi");
             });
             if (files == null) return;
             Arrays.sort(files, (a, b) -> a.getName().compareToIgnoreCase(b.getName()));
