@@ -1,4 +1,6 @@
-package spaceinvaders;
+package spaceinvaders.UI;
+
+import spaceinvaders.GameExceptions;
 
 import java.awt.*;
 import java.net.URL;

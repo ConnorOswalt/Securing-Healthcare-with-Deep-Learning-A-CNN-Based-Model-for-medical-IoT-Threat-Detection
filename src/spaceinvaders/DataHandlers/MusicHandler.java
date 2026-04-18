@@ -1,4 +1,6 @@
-package spaceinvaders;
+package spaceinvaders.DataHandlers;
+
+import spaceinvaders.GameExceptions;
 
 import java.net.URL;
 import javax.sound.sampled.AudioInputStream;

@@ -1,4 +1,4 @@
-package spaceinvaders.JMenus;
+package spaceinvaders.UI.JMenus;
 
 import spaceinvaders.ListenerActions;
 
