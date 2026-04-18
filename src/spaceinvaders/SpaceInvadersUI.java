@@ -2,12 +2,15 @@ package spaceinvaders;
 
 import spaceinvaders.scores.ScoreManager;
 import spaceinvaders.characters.Bullet;
+import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
-import spaceinvaders.JMenus.ParentMenu;
 import spaceinvaders.JMenus.ShooterMenu;
 import spaceinvaders.JMenus.InvaderMenu;
 import spaceinvaders.JMenus.BulletMenu;
 import spaceinvaders.JMenus.MusicMenu;
+import spaceinvaders.JMenus.BackgroundMenu;
+import spaceinvaders.JMenus.EffectsMenu;
+import spaceinvaders.JMenus.ThemesMenu;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -21,8 +24,11 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private final Timer repaintTimer;
     public ArrayList<Invader> invaders;
     public ArrayList<Bullet> bullets;
+    public ArrayList<Explosion> explosions;
     public Random random;
-    public boolean moveLeft, moveRight, fireHeld;
+    public boolean moveLeft, moveRight;
+    public boolean fireHeld;
+    private boolean explosionsEnabled = true;
     private final ListenerActions listenerActions;
     public final ImageSelection imageSelection;
     private final PaintingActions paintingActions;
@@ -30,6 +36,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private int shooter_height = 60;
     private int shooter_X_Coordinate = 200;
     private GameCalculator gameCalculator;
+    private MusicHandler musicHandler;
     public static int breakpointcounter = 0;
     private ScoreManager scoreManager;
     private int playerHealth = 3;
@@ -49,6 +56,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         // GameCalculator will be started after UI is fully initialized
         invaders = new ArrayList<>(); // Need to describe what ArrayList<> is.
         bullets = new ArrayList<>();
+        explosions = new ArrayList<>();
         random = new Random();
         moveLeft = false;
         moveRight = false;
@@ -57,6 +65,8 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         imageSelection = new ImageSelection();
         paintingActions = new PaintingActions();
         scoreManager = new ScoreManager();
+        musicHandler = new MusicHandler();
+        musicHandler.start();
         // For debugging
 
         // Set images
@@ -108,7 +118,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     // Let's move these methods into a separate PaintUI class
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        setBackground(Color.BLACK);
+        paintingActions.drawBackground(g, this);
 
         if (gameOver) {
             drawGameOver(g);
@@ -120,6 +130,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         // Draw falling invaders (as images)
         paintingActions.drawInvaders(g, this, imageSelection.getInvaderImage());
+
+        // Draw invader explosion effects
+        paintingActions.drawExplosions(g, this);
 
         // Draw bullets (bullets)
         paintingActions.drawBullets(g, this);
@@ -157,6 +170,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         menuBar.add(new InvaderMenu());
         menuBar.add(new BulletMenu());
         menuBar.add(new MusicMenu());
+        menuBar.add(new BackgroundMenu());
+        menuBar.add(new EffectsMenu());
+        menuBar.add(new ThemesMenu());
         return menuBar;
     }
 
@@ -176,6 +192,23 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
      */
     public ScoreManager getScoreManager() {
         return scoreManager;
+    }
+
+    public MusicHandler getMusicHandler() {
+        return musicHandler;
+    }
+
+    public boolean isExplosionsEnabled() {
+        return explosionsEnabled;
+    }
+
+    public void setExplosionsEnabled(boolean explosionsEnabled) {
+        this.explosionsEnabled = explosionsEnabled;
+        if (!explosionsEnabled) {
+            synchronized (this) {
+                explosions.clear();
+            }
+        }
     }
 
     public int getPlayerHealth() {
@@ -211,6 +244,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public void setGameOver(boolean gameOver) {
         this.gameOver = gameOver;
         if (gameOver) {
+            fireHeld = false;
             gameOverFlashStartTime = System.currentTimeMillis(); // Record when game ended
             if (gameCalculator != null) {
                 gameCalculator.stopThread();
@@ -246,6 +280,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         synchronized (this) {
             invaders.clear();
             bullets.clear();
+            explosions.clear();
             gameOver = false;
             gameOverFlashStartTime = 0; // Reset game over flash timer
             playerHealth = 3;
@@ -278,6 +313,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         }
         if (scoreManager != null && scoreManager.isAlive()) {
             scoreManager.stopThread();
+        }
+        if (musicHandler != null && musicHandler.isAlive()) {
+            musicHandler.stopThread();
         }
     }
 

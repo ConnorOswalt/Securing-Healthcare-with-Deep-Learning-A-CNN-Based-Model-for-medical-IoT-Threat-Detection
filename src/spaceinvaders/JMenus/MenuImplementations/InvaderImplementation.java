@@ -25,7 +25,7 @@ public class InvaderImplementation {
             String customPath = JOptionPane.showInputDialog(
                     null,
                     "Enter project resource path " +
-                    "(example: /spaceinvaders/resources/Invader/Peter_Griffin.png):");
+                    "(example: /resources/Invader/Peter_Griffin.png):");
 
             if (customPath == null || customPath.isBlank()) {
                 return;
