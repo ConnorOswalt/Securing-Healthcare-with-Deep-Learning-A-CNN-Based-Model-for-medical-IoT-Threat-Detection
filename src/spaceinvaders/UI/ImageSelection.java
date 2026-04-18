@@ -4,6 +4,8 @@ import spaceinvaders.GameExceptions;
 
 import java.awt.*;
 import java.net.URL;
+import java.util.Collections;
+import java.util.List;
 import javax.swing.ImageIcon;
 
 public class ImageSelection {
@@ -11,6 +13,8 @@ public class ImageSelection {
     private Image invaderImage;
     private Image bulletImage;
     private Image backgroundImage;
+    private boolean starsBackgroundEnabled;
+    private final StarsBackgroundPainter starsBackgroundPainter = new StarsBackgroundPainter();
 
     public Image getShooterImage() {
         return shooterImage;
@@ -26,6 +30,17 @@ public class ImageSelection {
 
     public Image getBackgroundImage() {
         return backgroundImage;
+    }
+
+    public boolean isStarsBackgroundEnabled() {
+        return starsBackgroundEnabled;
+    }
+
+    public List<Point> getStarsSnapshot() {
+        if (!starsBackgroundEnabled) {
+            return Collections.emptyList();
+        }
+        return starsBackgroundPainter.getStarsSnapshot();
     }
 
     public void setGameImages() {
@@ -58,8 +73,16 @@ public class ImageSelection {
     public void setBackgroundImageFromResourcePath(String resourcePath) {
         Image loadedImage = loadImage("background", resourcePath);
         if (loadedImage != null) {
+            starsBackgroundEnabled = false;
             backgroundImage = loadedImage;
         }
+    }
+
+    public void enableStarsBackground(SpaceInvadersUI game) {
+        starsBackgroundEnabled = true;
+        backgroundImage = null;
+        starsBackgroundPainter.attachGame(game);
+        starsBackgroundPainter.startIfNeeded();
     }
 
     private static Image loadImage(String imageType, String resourcePath) {
