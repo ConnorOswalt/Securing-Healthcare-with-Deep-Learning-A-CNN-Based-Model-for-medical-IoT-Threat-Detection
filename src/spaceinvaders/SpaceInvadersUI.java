@@ -292,9 +292,12 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             firing = false;
         }
 
+        // Reset the current score for the new game
+        scoreManager.resetScore();
+
         gameCalculator = new GameCalculator(this);
         gameCalculator.start();
-        scoreManager.start();
+        // Don't restart scoreManager - it's a daemon thread that keeps running
         repaintTimer.start();
     }
 
