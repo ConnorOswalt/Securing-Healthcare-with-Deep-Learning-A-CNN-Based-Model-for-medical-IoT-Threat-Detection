@@ -8,6 +8,7 @@ import spaceinvaders.JMenus.ShooterMenu;
 import spaceinvaders.JMenus.InvaderMenu;
 import spaceinvaders.JMenus.BulletMenu;
 import spaceinvaders.JMenus.MusicMenu;
+import spaceinvaders.JMenus.BackgroundMenu;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -31,6 +32,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private int shooter_height = 60;
     private int shooter_X_Coordinate = 200;
     private GameCalculator gameCalculator;
+    private MusicHandler musicHandler;
     public static int breakpointcounter = 0;
     private ScoreManager scoreManager;
     private int playerHealth = 3;
@@ -58,6 +60,8 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         imageSelection = new ImageSelection();
         paintingActions = new PaintingActions();
         scoreManager = new ScoreManager();
+        musicHandler = new MusicHandler();
+        musicHandler.start();
         // For debugging
 
         // Set images
@@ -109,7 +113,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     // Let's move these methods into a separate PaintUI class
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
-        setBackground(Color.BLACK);
+        paintingActions.drawBackground(g, this);
 
         if (gameOver) {
             drawGameOver(g);
@@ -158,6 +162,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         menuBar.add(new InvaderMenu());
         menuBar.add(new BulletMenu());
         menuBar.add(new MusicMenu());
+        menuBar.add(new BackgroundMenu());
         return menuBar;
     }
 
@@ -177,6 +182,10 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
      */
     public ScoreManager getScoreManager() {
         return scoreManager;
+    }
+
+    public MusicHandler getMusicHandler() {
+        return musicHandler;
     }
 
     public int getPlayerHealth() {
@@ -277,6 +286,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         }
         if (scoreManager != null && scoreManager.isAlive()) {
             scoreManager.stopThread();
+        }
+        if (musicHandler != null && musicHandler.isAlive()) {
+            musicHandler.stopThread();
         }
     }
 

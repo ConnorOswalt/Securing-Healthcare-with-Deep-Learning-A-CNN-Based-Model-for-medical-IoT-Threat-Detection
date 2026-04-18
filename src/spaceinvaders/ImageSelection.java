@@ -8,6 +8,7 @@ public class ImageSelection {
     private Image shooterImage;
     private Image invaderImage;
     private Image bulletImage;
+    private Image backgroundImage;
 
     public Image getShooterImage() {
         return shooterImage;
@@ -19,6 +20,10 @@ public class ImageSelection {
 
     public Image getBulletImage() {
         return bulletImage;
+    }
+
+    public Image getBackgroundImage() {
+        return backgroundImage;
     }
 
     public void setGameImages() {
@@ -45,6 +50,13 @@ public class ImageSelection {
         Image loadedImage = loadImage("bullet", resourcePath);
         if (loadedImage != null) {
             bulletImage = loadedImage;
+        }
+    }
+
+    public void setBackgroundImageFromResourcePath(String resourcePath) {
+        Image loadedImage = loadImage("background", resourcePath);
+        if (loadedImage != null) {
+            backgroundImage = loadedImage;
         }
     }
 

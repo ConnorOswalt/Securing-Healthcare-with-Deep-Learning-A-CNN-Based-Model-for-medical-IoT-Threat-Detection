@@ -18,6 +18,17 @@ public class PaintingActions {
 
     }
 
+    public void drawBackground(Graphics g, SpaceInvadersUI game) {
+        Image backgroundImage = game.imageSelection.getBackgroundImage();
+        if (backgroundImage != null) {
+            g.drawImage(backgroundImage, 0, 0, game.getWidth(), game.getHeight(), game);
+            return;
+        }
+
+        g.setColor(Color.BLACK);
+        g.fillRect(0, 0, game.getWidth(), game.getHeight());
+    }
+
     public void drawShooter(Graphics g, SpaceInvadersUI game) {
         Image shooter_image = game.imageSelection.getShooterImage();
         int shooter_height = game.getShooterHeight();
