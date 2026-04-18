@@ -1,5 +1,7 @@
 package spaceinvaders.UI.JMenus;
 
+import spaceinvaders.GameExceptions;
+
 import javax.swing.JMenu;
 import javax.swing.JMenuItem;
 import java.awt.event.ActionListener;
@@ -61,7 +63,7 @@ public class ParentMenu extends JMenu {
                 buttonTitles.add(name.replaceAll("\\.[^.]+$", ""));
             }
         } catch (URISyntaxException | IllegalArgumentException e) {
-            // Could not resolve directory as filesystem path; leave lists empty
+            GameExceptions.logWarning("Could not load menu resources from " + resourceDir + ": " + e.getMessage());
         }
     }
 

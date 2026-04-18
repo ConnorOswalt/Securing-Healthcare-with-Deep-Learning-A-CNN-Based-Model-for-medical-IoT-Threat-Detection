@@ -46,7 +46,7 @@ public class GameCalculator extends Thread {
                 try {
                     Thread.sleep(1);
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    GameExceptions.handleInterrupted("GameCalculator loop", e);
                     break;
                 }
             }
