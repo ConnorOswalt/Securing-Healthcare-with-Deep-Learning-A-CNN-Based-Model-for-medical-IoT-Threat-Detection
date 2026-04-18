@@ -2,7 +2,7 @@
   "name": "Sabaton",
   "shooter": "/resources/Shooter/Sherman-Shooter.png",
   "invader": "/resources/Invader/TigerII-Invader.png",
-  "bullet": "/resources/Bullet/rocket.gif",
+  "bullet": "/resources/Bullet/Tank_Shell.png",
   "background": "/resources/Background/TankBattleground.jpg",
   "music": "/resources/Music/Sabaton.wav"
 }
