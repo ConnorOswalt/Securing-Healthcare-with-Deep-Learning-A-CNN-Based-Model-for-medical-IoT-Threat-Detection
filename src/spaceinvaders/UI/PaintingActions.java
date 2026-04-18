@@ -1,4 +1,4 @@
-package spaceinvaders;
+package spaceinvaders.UI;
 
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Explosion;

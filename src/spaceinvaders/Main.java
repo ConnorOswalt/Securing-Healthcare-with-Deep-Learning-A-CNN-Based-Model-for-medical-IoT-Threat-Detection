@@ -1,6 +1,7 @@
 package spaceinvaders;
 
 import spaceinvaders.scores.LeaderboardPanel;
+import spaceinvaders.UI.SpaceInvadersUI;
 import javax.swing.JFrame;
 import javax.swing.*;
 

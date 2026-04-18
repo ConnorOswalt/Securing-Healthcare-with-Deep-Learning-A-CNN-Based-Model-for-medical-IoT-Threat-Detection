@@ -1,16 +1,19 @@
-package spaceinvaders;
+package spaceinvaders.UI;
 
+import spaceinvaders.DataHandlers.MusicHandler;
+import spaceinvaders.GameCalculator;
+import spaceinvaders.ListenerActions;
 import spaceinvaders.scores.ScoreManager;
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
-import spaceinvaders.JMenus.ShooterMenu;
-import spaceinvaders.JMenus.InvaderMenu;
-import spaceinvaders.JMenus.BulletMenu;
-import spaceinvaders.JMenus.MusicMenu;
-import spaceinvaders.JMenus.BackgroundMenu;
-import spaceinvaders.JMenus.EffectsMenu;
-import spaceinvaders.JMenus.ThemesMenu;
+import spaceinvaders.UI.JMenus.ShooterMenu;
+import spaceinvaders.UI.JMenus.InvaderMenu;
+import spaceinvaders.UI.JMenus.BulletMenu;
+import spaceinvaders.UI.JMenus.MusicMenu;
+import spaceinvaders.UI.JMenus.BackgroundMenu;
+import spaceinvaders.UI.JMenus.EffectsMenu;
+import spaceinvaders.UI.JMenus.ThemesMenu;
 
 import java.awt.*;
 import java.awt.event.*;

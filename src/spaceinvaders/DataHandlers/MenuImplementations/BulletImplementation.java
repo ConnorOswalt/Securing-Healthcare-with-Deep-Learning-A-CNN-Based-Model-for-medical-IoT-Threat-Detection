@@ -1,7 +1,7 @@
-package spaceinvaders.JMenus.MenuImplementations;
+package spaceinvaders.DataHandlers.MenuImplementations;
 
 import spaceinvaders.GameExceptions;
-import spaceinvaders.SpaceInvadersUI;
+import spaceinvaders.UI.SpaceInvadersUI;
 
 import java.awt.event.ActionEvent;
 import javax.swing.JMenuItem;

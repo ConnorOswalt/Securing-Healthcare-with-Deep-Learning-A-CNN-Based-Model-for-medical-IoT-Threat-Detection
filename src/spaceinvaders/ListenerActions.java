@@ -1,12 +1,13 @@
 package spaceinvaders;
 
-import spaceinvaders.JMenus.MenuImplementations.BulletImplementation;
-import spaceinvaders.JMenus.MenuImplementations.BackgroundImplementation;
-import spaceinvaders.JMenus.MenuImplementations.EffectsImplementation;
-import spaceinvaders.JMenus.MenuImplementations.InvaderImplementation;
-import spaceinvaders.JMenus.MenuImplementations.MusicImplementation;
-import spaceinvaders.JMenus.MenuImplementations.ShooterImplementation;
-import spaceinvaders.JMenus.MenuImplementations.ThemeImplementation;
+import spaceinvaders.DataHandlers.MenuImplementations.BulletImplementation;
+import spaceinvaders.DataHandlers.MenuImplementations.BackgroundImplementation;
+import spaceinvaders.DataHandlers.MenuImplementations.EffectsImplementation;
+import spaceinvaders.DataHandlers.MenuImplementations.InvaderImplementation;
+import spaceinvaders.DataHandlers.MenuImplementations.MusicImplementation;
+import spaceinvaders.DataHandlers.MenuImplementations.ShooterImplementation;
+import spaceinvaders.DataHandlers.MenuImplementations.ThemeImplementation;
+import spaceinvaders.UI.SpaceInvadersUI;
 
 import java.awt.event.*;
 import javax.swing.JOptionPane;

@@ -1,14 +1,14 @@
-package spaceinvaders.JMenus.MenuImplementations;
+package spaceinvaders.DataHandlers.MenuImplementations;
 
 import spaceinvaders.GameExceptions;
-import spaceinvaders.SpaceInvadersUI;
+import spaceinvaders.UI.SpaceInvadersUI;
 
 import java.awt.event.ActionEvent;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
-public class InvaderImplementation {
-    public void handleInvaderSelection(ActionEvent e) {
+public class MusicImplementation {
+    public void handleMusicSelection(ActionEvent e) {
         if (!(e.getSource() instanceof JMenuItem)) {
             return;
         }
@@ -17,33 +17,30 @@ public class InvaderImplementation {
         String selectedPath = selectedItem.getName();
 
         SpaceInvadersUI game = SpaceInvadersUI.getActiveInstance();
-        if (game == null) {
+        if (game == null || game.getMusicHandler() == null) {
             return;
         }
 
         if (selectedPath == null || selectedPath.isBlank()) {
             String customPath = JOptionPane.showInputDialog(
                     null,
-                    "Enter project resource path " +
-                    "(example: /resources/Invader/Peter_Griffin.png):");
+                    "Enter project resource path (example: /resources/Music/theme.wav):");
 
             if (customPath == null || customPath.isBlank()) {
                 return;
             }
 
             String normalizedPath = normalizeResourcePath(customPath);
-            if (InvaderImplementation.class.getResource(normalizedPath) == null) {
+            if (MusicImplementation.class.getResource(normalizedPath) == null) {
                 GameExceptions.showErrorDialog("Invalid project resource path: " + customPath);
                 return;
             }
 
-            game.imageSelection.setInvaderImageFromResourcePath(normalizedPath);
-            game.repaint();
+            game.getMusicHandler().selectTrack(normalizedPath);
             return;
         }
 
-        game.imageSelection.setInvaderImageFromResourcePath(selectedPath);
-        game.repaint();
+        game.getMusicHandler().selectTrack(selectedPath);
     }
 
     private String normalizeResourcePath(String customPath) {

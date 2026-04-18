@@ -1,22 +1,22 @@
-package spaceinvaders.JMenus;
+package spaceinvaders.UI.JMenus;
 
 import spaceinvaders.ListenerActions;
 
 import java.awt.event.ActionListener;
 
-public class ShooterMenu extends ParentMenu {
+public class InvaderMenu extends ParentMenu {
     @Override
     protected String setTitle() {
-        return "Shooter";
+        return "Invader";
     }
 
     @Override
     protected String setResourceDirectory() {
-        return "/resources/Shooter/";
+        return "/resources/Invader/";
     }
 
     @Override
     protected ActionListener getMenuListener() {
-        return new ListenerActions().shooterMenuListener();
+        return new ListenerActions().invaderMenuListener();
     }
 }

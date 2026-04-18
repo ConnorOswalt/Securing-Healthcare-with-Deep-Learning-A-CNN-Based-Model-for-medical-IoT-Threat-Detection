@@ -1,14 +1,14 @@
-package spaceinvaders.JMenus.MenuImplementations;
+package spaceinvaders.DataHandlers.MenuImplementations;
 
 import spaceinvaders.GameExceptions;
-import spaceinvaders.SpaceInvadersUI;
+import spaceinvaders.UI.SpaceInvadersUI;
 
 import java.awt.event.ActionEvent;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
-public class ShooterImplementation {
-    public void handleShooterSelection(ActionEvent e) {
+public class BackgroundImplementation {
+    public void handleBackgroundSelection(ActionEvent e) {
         if (!(e.getSource() instanceof JMenuItem)) {
             return;
         }
@@ -24,24 +24,24 @@ public class ShooterImplementation {
         if (selectedPath == null || selectedPath.isBlank()) {
             String customPath = JOptionPane.showInputDialog(
                     null,
-                    "Enter project resource path (example: /resources/Shooter/Rick.png):");
+                    "Enter project resource path (example: /resources/Background/stars.gif):");
 
             if (customPath == null || customPath.isBlank()) {
                 return;
             }
 
             String normalizedPath = normalizeResourcePath(customPath);
-            if (ShooterImplementation.class.getResource(normalizedPath) == null) {
+            if (BackgroundImplementation.class.getResource(normalizedPath) == null) {
                 GameExceptions.showErrorDialog("Invalid project resource path: " + customPath);
                 return;
             }
 
-            game.imageSelection.setShooterImageFromResourcePath(normalizedPath);
+            game.imageSelection.setBackgroundImageFromResourcePath(normalizedPath);
             game.repaint();
             return;
         }
 
-        game.imageSelection.setShooterImageFromResourcePath(selectedPath);
+        game.imageSelection.setBackgroundImageFromResourcePath(selectedPath);
         game.repaint();
     }
 

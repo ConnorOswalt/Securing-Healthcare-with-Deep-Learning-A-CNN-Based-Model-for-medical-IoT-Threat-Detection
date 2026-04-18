@@ -1,22 +1,22 @@
-package spaceinvaders.JMenus;
+package spaceinvaders.UI.JMenus;
 
 import spaceinvaders.ListenerActions;
 
 import java.awt.event.ActionListener;
 
-public class ThemesMenu extends ParentMenu {
+public class BackgroundMenu extends ParentMenu {
     @Override
     protected String setTitle() {
-        return "Themes";
+        return "Background";
     }
 
     @Override
     protected String setResourceDirectory() {
-        return "/resources/Themes/";
+        return "/resources/Background/";
     }
 
     @Override
     protected ActionListener getMenuListener() {
-        return new ListenerActions().themesMenuListener();
+        return new ListenerActions().backgroundMenuListener();
     }
 }

@@ -1,14 +1,14 @@
-package spaceinvaders.JMenus.MenuImplementations;
+package spaceinvaders.DataHandlers.MenuImplementations;
 
 import spaceinvaders.GameExceptions;
-import spaceinvaders.SpaceInvadersUI;
+import spaceinvaders.UI.SpaceInvadersUI;
 
 import java.awt.event.ActionEvent;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
-public class MusicImplementation {
-    public void handleMusicSelection(ActionEvent e) {
+public class ShooterImplementation {
+    public void handleShooterSelection(ActionEvent e) {
         if (!(e.getSource() instanceof JMenuItem)) {
             return;
         }
@@ -17,30 +17,32 @@ public class MusicImplementation {
         String selectedPath = selectedItem.getName();
 
         SpaceInvadersUI game = SpaceInvadersUI.getActiveInstance();
-        if (game == null || game.getMusicHandler() == null) {
+        if (game == null) {
             return;
         }
 
         if (selectedPath == null || selectedPath.isBlank()) {
             String customPath = JOptionPane.showInputDialog(
                     null,
-                    "Enter project resource path (example: /resources/Music/theme.wav):");
+                    "Enter project resource path (example: /resources/Shooter/Rick.png):");
 
             if (customPath == null || customPath.isBlank()) {
                 return;
             }
 
             String normalizedPath = normalizeResourcePath(customPath);
-            if (MusicImplementation.class.getResource(normalizedPath) == null) {
+            if (ShooterImplementation.class.getResource(normalizedPath) == null) {
                 GameExceptions.showErrorDialog("Invalid project resource path: " + customPath);
                 return;
             }
 
-            game.getMusicHandler().selectTrack(normalizedPath);
+            game.imageSelection.setShooterImageFromResourcePath(normalizedPath);
+            game.repaint();
             return;
         }
 
-        game.getMusicHandler().selectTrack(selectedPath);
+        game.imageSelection.setShooterImageFromResourcePath(selectedPath);
+        game.repaint();
     }
 
     private String normalizeResourcePath(String customPath) {
