@@ -2,6 +2,7 @@ package spaceinvaders;
 
 import spaceinvaders.JMenus.MenuImplementations.BulletImplementation;
 import spaceinvaders.JMenus.MenuImplementations.BackgroundImplementation;
+import spaceinvaders.JMenus.MenuImplementations.EffectsImplementation;
 import spaceinvaders.JMenus.MenuImplementations.InvaderImplementation;
 import spaceinvaders.JMenus.MenuImplementations.MusicImplementation;
 import spaceinvaders.JMenus.MenuImplementations.ShooterImplementation;
@@ -23,6 +24,7 @@ public class ListenerActions {
     private final BulletImplementation bulletImplementation = new BulletImplementation();
     private final MusicImplementation musicImplementation = new MusicImplementation();
     private final BackgroundImplementation backgroundImplementation = new BackgroundImplementation();
+    private final EffectsImplementation effectsImplementation = new EffectsImplementation();
 
 
     public void keyPressed(KeyEvent e, SpaceInvadersUI game) {
@@ -86,5 +88,9 @@ public class ListenerActions {
 
     public ActionListener backgroundMenuListener() {
         return e -> backgroundImplementation.handleBackgroundSelection(e);
+    }
+
+    public ActionListener effectsMenuListener() {
+        return e -> effectsImplementation.handleEffectsSelection(e);
     }
 }

@@ -191,6 +191,10 @@ public class GameCalculator extends Thread {
     }
 
     private void addExplosionForInvader(Invader invader) {
+        if (!game.isExplosionsEnabled()) {
+            return;
+        }
+
         int centerX = invader.getX() + invader.getSize() / 2;
         int centerY = invader.getY() + invader.getSize() / 2;
         int maxRadius = Math.max(12, invader.getSize());

@@ -10,6 +10,7 @@ import spaceinvaders.JMenus.InvaderMenu;
 import spaceinvaders.JMenus.BulletMenu;
 import spaceinvaders.JMenus.MusicMenu;
 import spaceinvaders.JMenus.BackgroundMenu;
+import spaceinvaders.JMenus.EffectsMenu;
 
 import java.awt.*;
 import java.awt.event.*;
@@ -27,6 +28,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public Random random;
     public boolean moveLeft, moveRight;
     public boolean firing;
+    private boolean explosionsEnabled = true;
     private final ListenerActions listenerActions;
     public final ImageSelection imageSelection;
     private final PaintingActions paintingActions;
@@ -169,6 +171,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         menuBar.add(new BulletMenu());
         menuBar.add(new MusicMenu());
         menuBar.add(new BackgroundMenu());
+        menuBar.add(new EffectsMenu());
         return menuBar;
     }
 
@@ -192,6 +195,19 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
     public MusicHandler getMusicHandler() {
         return musicHandler;
+    }
+
+    public boolean isExplosionsEnabled() {
+        return explosionsEnabled;
+    }
+
+    public void setExplosionsEnabled(boolean explosionsEnabled) {
+        this.explosionsEnabled = explosionsEnabled;
+        if (!explosionsEnabled) {
+            synchronized (this) {
+                explosions.clear();
+            }
+        }
     }
 
     public int getPlayerHealth() {
