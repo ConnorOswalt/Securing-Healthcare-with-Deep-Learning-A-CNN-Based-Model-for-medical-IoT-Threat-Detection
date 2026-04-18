@@ -14,8 +14,6 @@ import java.util.List;
  * Reads shared game state safely using synchronized access.
  */
 public class PaintingActions {
-    private String cachedBulletPath;
-    private Image cachedBulletImage;
 
     public PaintingActions() {
 
@@ -24,6 +22,14 @@ public class PaintingActions {
     public void drawBackground(Graphics g, SpaceInvadersUI game) {
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, game.getWidth(), game.getHeight());
+
+        if (game.imageSelection.isStarsBackgroundEnabled()) {
+            g.setColor(Color.WHITE);
+            for (Point star : game.imageSelection.getStarsSnapshot()) {
+                g.fillOval(star.x, star.y, 2, 2);
+            }
+            return;
+        }
 
         Image backgroundImage = game.imageSelection.getBackgroundImage();
         if (backgroundImage != null) {

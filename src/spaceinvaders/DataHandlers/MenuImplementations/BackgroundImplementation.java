@@ -8,6 +8,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 
 public class BackgroundImplementation {
+    public static final String STARS_BACKGROUND_OPTION = "__stars_background__";
+
     public void handleBackgroundSelection(ActionEvent e) {
         if (!(e.getSource() instanceof JMenuItem)) {
             return;
@@ -18,6 +20,12 @@ public class BackgroundImplementation {
 
         SpaceInvadersUI game = SpaceInvadersUI.getActiveInstance();
         if (game == null) {
+            return;
+        }
+
+        if (STARS_BACKGROUND_OPTION.equals(selectedPath)) {
+            game.imageSelection.enableStarsBackground(game);
+            game.repaint();
             return;
         }
 

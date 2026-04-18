@@ -83,6 +83,8 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
                 if (getWidth() > 0 && getHeight() > 0) {
+                    imageSelection.enableStarsBackground(SpaceInvadersUI.this);
+                    repaint();
                     // Now that UI is initialized, start the game calculator thread
                     gameCalculator = new GameCalculator(SpaceInvadersUI.this);
                     gameCalculator.start();
