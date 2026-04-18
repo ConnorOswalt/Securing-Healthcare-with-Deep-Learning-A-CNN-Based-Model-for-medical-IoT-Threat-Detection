@@ -100,6 +100,7 @@ public class ThemeImplementation {
             }
             return new String(input.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
+            GameExceptions.handleWithDialog("Unable to read theme file " + resourcePath, e);
             return null;
         }
     }

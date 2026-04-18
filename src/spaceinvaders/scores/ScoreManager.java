@@ -1,5 +1,7 @@
 package spaceinvaders.scores;
 
+import spaceinvaders.GameExceptions;
+
 import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -44,7 +46,7 @@ public class ScoreManager extends Thread {
                     performSaveScore(task.playerName, task.score);
                 }
             } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+                GameExceptions.handleInterrupted("ScoreManager queue poll", e);
                 break;
             }
         }
@@ -90,8 +92,7 @@ public class ScoreManager extends Thread {
         try {
             saveQueue.put(new ScoreSaveTask(playerName, scoreToSave));
         } catch (InterruptedException e) {
-            System.out.println("Error queueing score save: " + e.getMessage());
-            Thread.currentThread().interrupt();
+            GameExceptions.handleInterrupted("ScoreManager save queue", e);
         }
     }
 

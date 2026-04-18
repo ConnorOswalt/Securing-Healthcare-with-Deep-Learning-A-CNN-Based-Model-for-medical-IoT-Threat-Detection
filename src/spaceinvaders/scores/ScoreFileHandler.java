@@ -1,5 +1,7 @@
 package spaceinvaders.scores;
 
+import spaceinvaders.GameExceptions;
+
 import java.io.*;
 import java.util.*;
 
@@ -29,7 +31,7 @@ public class ScoreFileHandler {
                     // Parse the line as "name,score"
                     String[] parts = line.split(",", 2);
                     if (parts.length != 2) {
-                        System.out.println("Warning: Malformed line skipped: " + line);
+                        GameExceptions.logWarning("Malformed score line skipped: " + line);
                         continue;
                     }
                     
@@ -37,14 +39,14 @@ public class ScoreFileHandler {
                     int score = Integer.parseInt(parts[1].trim());
                     scores.add(new ScoreEntry(name, score));
                 } catch (NumberFormatException e) {
-                    System.out.println("Warning: Could not parse score in line: " + line);
+                    GameExceptions.logWarning("Could not parse score in line: " + line);
                 }
             }
         } catch (FileNotFoundException e) {
             // File doesn't exist, return empty list
-            System.out.println("Warning: Scores file not found: " + SCORES_FILE);
+            GameExceptions.logWarning("Scores file not found: " + SCORES_FILE);
         } catch (IOException e) {
-            System.out.println("Error reading scores file: " + e.getMessage());
+            GameExceptions.handleWithDialog("Error reading scores file", e);
         }
         
         return scores;
@@ -63,7 +65,7 @@ public class ScoreFileHandler {
                 writer.newLine();
             }
         } catch (IOException e) {
-            System.out.println("Error writing scores file: " + e.getMessage());
+            GameExceptions.handleWithDialog("Error writing scores file", e);
         }
     }
 }

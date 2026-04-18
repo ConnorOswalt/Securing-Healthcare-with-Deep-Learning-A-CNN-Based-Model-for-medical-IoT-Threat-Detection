@@ -37,7 +37,7 @@ public class MusicHandler extends Thread {
                     try {
                         wait();
                     } catch (InterruptedException e) {
-                        Thread.currentThread().interrupt();
+                        GameExceptions.handleInterrupted("MusicHandler wait", e);
                         running = false;
                         break;
                     }
@@ -124,7 +124,7 @@ public class MusicHandler extends Thread {
             }
             clip = newClip;
         } catch (UnsupportedAudioFileException | LineUnavailableException | java.io.IOException e) {
-            GameExceptions.showErrorDialog("Failed to play music track: " + e.getMessage());
+            GameExceptions.handleWithDialog("Failed to play music track", e);
         }
     }
 
