@@ -68,7 +68,25 @@ public class MusicHandler extends Thread {
 
     public synchronized void setMuted(boolean muted) {
         this.muted = muted;
-        applyVolumeToCurrentClip();
+
+        if (clip == null) {
+            return;
+        }
+
+        // Make mute/unmute feel immediate by pausing/resuming playback,
+        // not just changing gain on a running buffered clip.
+        if (muted) {
+            if (clip.isRunning()) {
+                clip.stop();
+            }
+            applyVolumeToClip(clip);
+            return;
+        }
+
+        applyVolumeToClip(clip);
+        if (!clip.isRunning()) {
+            clip.start();
+        }
     }
 
     public synchronized boolean isMuted() {
@@ -99,7 +117,9 @@ public class MusicHandler extends Thread {
             newClip.open(audioStream);
             applyVolumeToClip(newClip);
             newClip.loop(Clip.LOOP_CONTINUOUSLY);
-            newClip.start();
+            if (!muted) {
+                newClip.start();
+            }
             clip = newClip;
         } catch (UnsupportedAudioFileException | LineUnavailableException | java.io.IOException e) {
             GameExceptions.showErrorDialog("Failed to play music track: " + e.getMessage());

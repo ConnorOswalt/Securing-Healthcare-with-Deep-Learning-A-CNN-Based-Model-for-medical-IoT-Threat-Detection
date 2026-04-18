@@ -6,3 +6,4 @@ src/.DS_Store
 *.class
 scores.txt
 .gitignore
+scores.txt
