@@ -4,7 +4,6 @@ import spaceinvaders.scores.ScoreManager;
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
-import spaceinvaders.JMenus.ParentMenu;
 import spaceinvaders.JMenus.ShooterMenu;
 import spaceinvaders.JMenus.InvaderMenu;
 import spaceinvaders.JMenus.BulletMenu;

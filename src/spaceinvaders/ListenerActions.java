@@ -1,11 +1,8 @@
 package spaceinvaders;
 
 import spaceinvaders.JMenus.MenuImplementations.BulletImplementation;
-<<<<<<< HEAD
 import spaceinvaders.JMenus.MenuImplementations.BackgroundImplementation;
 import spaceinvaders.JMenus.MenuImplementations.EffectsImplementation;
-=======
->>>>>>> origin/ScoreSystem
 import spaceinvaders.JMenus.MenuImplementations.InvaderImplementation;
 import spaceinvaders.JMenus.MenuImplementations.MusicImplementation;
 import spaceinvaders.JMenus.MenuImplementations.ShooterImplementation;
@@ -26,13 +23,10 @@ public class ListenerActions {
     private final ShooterImplementation shooterImplementation = new ShooterImplementation();
     private final InvaderImplementation invaderImplementation = new InvaderImplementation();
     private final BulletImplementation bulletImplementation = new BulletImplementation();
-<<<<<<< HEAD
     private final MusicImplementation musicImplementation = new MusicImplementation();
     private final BackgroundImplementation backgroundImplementation = new BackgroundImplementation();
     private final EffectsImplementation effectsImplementation = new EffectsImplementation();
     private final ThemeImplementation themeImplementation = new ThemeImplementation();
-=======
->>>>>>> origin/ScoreSystem
 
 
     public void keyPressed(KeyEvent e, SpaceInvadersUI game) {
