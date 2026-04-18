@@ -254,6 +254,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             moveRight = false;
         }
 
+        // Reset the current score for the new game
+        scoreManager.resetScore();
+
         gameCalculator = new GameCalculator(this);
         gameCalculator.start();
         scoreManager.start();
