@@ -54,7 +54,7 @@ public class GameCalculator extends Thread {
 
     private void updateGameState() {
         updateShooterPosition();
-        updateContinuousFire();
+        handleShooting();
         updateInvaderPositions();
         updateBulletPositions();
         checkCollisions();
@@ -80,15 +80,18 @@ public class GameCalculator extends Thread {
             }
 
             long currentTime = System.currentTimeMillis();
-            if (currentTime - lastFireTimeMs < FIRE_INTERVAL_MS) {
-                return;
+    private void handleShooting() {
+            if (game.isGameOver() || !game.fireHeld) {
+                if (game.isGameOver() || !game.fireHeld) {
             }
 
-            int shooterX = game.getShooter_X_Coordinate();
+            long now = System.currentTimeMillis();
+            }
+
             int shooterWidth = game.getShooterWidth();
             int shooterHeight = game.getShooterHeight();
             game.bullets.add(new Bullet(shooterX + shooterWidth / 2, game.getHeight() - shooterHeight));
-            lastFireTimeMs = currentTime;
+            lastFireTimeMs = now;
         }
     }
 

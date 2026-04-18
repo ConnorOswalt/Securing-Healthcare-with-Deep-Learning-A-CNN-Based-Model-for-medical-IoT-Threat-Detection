@@ -14,6 +14,9 @@ import java.util.List;
  * Reads shared game state safely using synchronized access.
  */
 public class PaintingActions {
+    private String cachedBulletPath;
+    private Image cachedBulletImage;
+
     public PaintingActions() {
 
     }
@@ -95,7 +98,6 @@ public class PaintingActions {
             }
         }
     }
-
     public void drawPlayerHealth(Graphics g, SpaceInvadersUI game) {
         int playerHealth = game.getPlayerHealth();
         int heartSize = 16;

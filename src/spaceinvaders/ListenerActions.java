@@ -38,7 +38,7 @@ public class ListenerActions {
             game.moveRight = true;
         }
         if (key == KeyEvent.VK_SPACE) {
-            game.firing = true;
+            game.fireHeld = true;
         }
         if (key == KeyEvent.VK_R && game.isGameOver()) {
             // Prompt for player name before restarting
@@ -68,7 +68,7 @@ public class ListenerActions {
             game.moveRight = false;
         }
         if (key == KeyEvent.VK_SPACE) {
-            game.firing = false;
+            game.fireHeld = false;
         }
     }
 
