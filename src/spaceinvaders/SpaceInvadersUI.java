@@ -22,7 +22,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public ArrayList<Invader> invaders;
     public ArrayList<Bullet> bullets;
     public Random random;
-    public boolean moveLeft, moveRight;
+    public boolean moveLeft, moveRight, fireHeld;
     private final ListenerActions listenerActions;
     public final ImageSelection imageSelection;
     private final PaintingActions paintingActions;
@@ -52,6 +52,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         random = new Random();
         moveLeft = false;
         moveRight = false;
+        fireHeld = false;
         listenerActions = new ListenerActions();
         imageSelection = new ImageSelection();
         paintingActions = new PaintingActions();
@@ -252,6 +253,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             shooter_X_Coordinate = 200;
             moveLeft = false;
             moveRight = false;
+            fireHeld = false;
         }
 
         // Reset the current score for the new game
