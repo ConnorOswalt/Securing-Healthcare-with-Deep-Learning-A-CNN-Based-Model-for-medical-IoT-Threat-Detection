@@ -2,6 +2,7 @@ package spaceinvaders;
 
 import spaceinvaders.scores.ScoreManager;
 import spaceinvaders.characters.Bullet;
+import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
 import spaceinvaders.JMenus.ParentMenu;
 import spaceinvaders.JMenus.ShooterMenu;
@@ -22,6 +23,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private final Timer repaintTimer;
     public ArrayList<Invader> invaders;
     public ArrayList<Bullet> bullets;
+    public ArrayList<Explosion> explosions;
     public Random random;
     public boolean moveLeft, moveRight;
     public boolean firing;
@@ -52,6 +54,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         // GameCalculator will be started after UI is fully initialized
         invaders = new ArrayList<>(); // Need to describe what ArrayList<> is.
         bullets = new ArrayList<>();
+        explosions = new ArrayList<>();
         random = new Random();
         moveLeft = false;
         moveRight = false;
@@ -125,6 +128,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         // Draw falling invaders (as images)
         paintingActions.drawInvaders(g, this, imageSelection.getInvaderImage());
+
+        // Draw invader explosion effects
+        paintingActions.drawExplosions(g, this);
 
         // Draw bullets (bullets)
         paintingActions.drawBullets(g, this);
@@ -257,6 +263,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         synchronized (this) {
             invaders.clear();
             bullets.clear();
+            explosions.clear();
             gameOver = false;
             gameOverFlashStartTime = 0; // Reset game over flash timer
             playerHealth = 3;

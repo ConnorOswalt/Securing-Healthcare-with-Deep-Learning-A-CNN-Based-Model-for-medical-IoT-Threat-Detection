@@ -1,6 +1,7 @@
 package spaceinvaders;
 
 import spaceinvaders.characters.Bullet;
+import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
 
 import java.awt.*;
@@ -50,6 +51,28 @@ public class PaintingActions {
         for (Invader invader : invadersCopy) {
             g.drawImage(invaderImage, invader.getX(), invader.getY(), invader.getSize(),
                     invader.getSize(), game);
+        }
+    }
+
+    public void drawExplosions(Graphics g, SpaceInvadersUI game) {
+        List<Explosion> explosionsCopy;
+        synchronized (game) {
+            explosionsCopy = new ArrayList<>(game.explosions);
+        }
+
+        for (Explosion explosion : explosionsCopy) {
+            double progress = explosion.getProgress();
+            int radius = (int) Math.max(2, explosion.getMaxRadius() * progress);
+            int alpha = (int) Math.max(0, 255 * (1.0 - progress));
+
+            g.setColor(new Color(255, 170, 0, alpha));
+            g.fillOval(explosion.getCenterX() - radius, explosion.getCenterY() - radius,
+                    radius * 2, radius * 2);
+
+            int innerRadius = Math.max(2, radius / 2);
+            g.setColor(new Color(255, 240, 120, alpha));
+            g.fillOval(explosion.getCenterX() - innerRadius, explosion.getCenterY() - innerRadius,
+                    innerRadius * 2, innerRadius * 2);
         }
     }
 

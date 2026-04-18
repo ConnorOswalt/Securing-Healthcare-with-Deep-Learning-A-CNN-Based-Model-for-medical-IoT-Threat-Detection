@@ -1,6 +1,7 @@
 package spaceinvaders;
 
 import spaceinvaders.characters.Bullet;
+import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
 
 import java.awt.*;
@@ -19,6 +20,7 @@ public class GameCalculator extends Thread {
     private volatile boolean running = true;
     private static final long UPDATE_INTERVAL_MS = 20; // Same as original timer interval
     private static final long FIRE_INTERVAL_MS = 150;
+    private static final long EXPLOSION_DURATION_MS = 300;
     private long lastFireTimeMs = 0;
 
     public GameCalculator(SpaceInvadersUI game) {
@@ -56,7 +58,19 @@ public class GameCalculator extends Thread {
         updateInvaderPositions();
         updateBulletPositions();
         checkCollisions();
+        updateExplosions();
         spawnNewInvaders();
+    }
+
+    private void updateExplosions() {
+        synchronized (game) {
+            Iterator<Explosion> explosionIterator = game.explosions.iterator();
+            while (explosionIterator.hasNext()) {
+                if (explosionIterator.next().isExpired()) {
+                    explosionIterator.remove();
+                }
+            }
+        }
     }
 
     private void updateContinuousFire() {
@@ -142,6 +156,7 @@ public class GameCalculator extends Thread {
                     if (new Rectangle(bullet.getX() - 5, bullet.getY(), 10, 10).intersects(
                             new Rectangle(invader.getX(), invader.getY(), invader.getSize(),
                                     invader.getSize()))) {
+                        addExplosionForInvader(invader);
                         bulletIterator.remove();
                         invaderIterator.remove();
                         game.addPoints(10);
@@ -165,6 +180,7 @@ public class GameCalculator extends Thread {
                     Rectangle invaderRect = new Rectangle(invader.getX(), invader.getY(),
                             invader.getSize(), invader.getSize());
                     if (shooterRect.intersects(invaderRect)) {
+                        addExplosionForInvader(invader);
                         invaderIterator.remove();
                         game.damagePlayer();
                         break; // Only one collision per frame
@@ -172,6 +188,13 @@ public class GameCalculator extends Thread {
                 }
             }
         }
+    }
+
+    private void addExplosionForInvader(Invader invader) {
+        int centerX = invader.getX() + invader.getSize() / 2;
+        int centerY = invader.getY() + invader.getSize() / 2;
+        int maxRadius = Math.max(12, invader.getSize());
+        game.explosions.add(new Explosion(centerX, centerY, maxRadius, EXPLOSION_DURATION_MS));
     }
 
     public void stopThread() {
