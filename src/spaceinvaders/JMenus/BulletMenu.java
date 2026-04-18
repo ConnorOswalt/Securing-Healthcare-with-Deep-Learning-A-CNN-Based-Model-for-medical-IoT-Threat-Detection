@@ -20,8 +20,8 @@ public class BulletMenu extends ParentMenu {
     @Override
     protected java.util.ArrayList<String> setButtonPaths() {
         return new java.util.ArrayList<>(Arrays.asList(
-                "\0", "\0", "/spaceinvaders/resources/Bullets/Tank_Shell.png
-                ", "/spaceinvaders/resources/Bullets/Rocket.png"));
+                null, null, "/spaceinvaders/resources/Bullets/Tank_Shell.png"
+                , "/spaceinvaders/resources/Bullets/Rocket.png"));
     }
 
     @Override
