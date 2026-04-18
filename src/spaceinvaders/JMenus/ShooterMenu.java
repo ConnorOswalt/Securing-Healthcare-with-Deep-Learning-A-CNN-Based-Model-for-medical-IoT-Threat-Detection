@@ -20,9 +20,9 @@ public class ShooterMenu extends ParentMenu {
     @Override
     protected java.util.ArrayList<String> setButtonPaths() {
         return new java.util.ArrayList<>(java.util.Arrays.asList(
-                "/spaceinvaders/resources/Shooter/ShooterImage.png",
-                "/spaceinvaders/resources/Shooter/Retro.png",
-                "/spaceinvaders/resources/Shooter/Sherman-Shooter.png"));
+                "/resources/Shooter/ShooterImage.png",
+                "/resources/Shooter/Retro.png",
+                "/resources/Shooter/Sherman-Shooter.png"));
     }
 
     @Override

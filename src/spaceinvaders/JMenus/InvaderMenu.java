@@ -20,9 +20,9 @@ public class InvaderMenu extends ParentMenu {
     @Override
     protected java.util.ArrayList<String> setButtonPaths() {
         return new java.util.ArrayList<>(java.util.Arrays.asList(
-                "/spaceinvaders/resources/Invader/InvaderImage.png",
-                "/spaceinvaders/resources/Invader/Alien1.png",
-                "/spaceinvaders/resources/Invader/TigerII-Invader.png"));
+                "/resources/Invader/InvaderImage.png",
+                "/resources/Invader/Alien1.png",
+                "/resources/Invader/TigerII-Invader.png"));
     }
     @Override
     protected ActionListener getMenuListener() {

@@ -24,7 +24,7 @@ public class ShooterImplementation {
         if (selectedPath == null || selectedPath.isBlank()) {
             String customPath = JOptionPane.showInputDialog(
                     null,
-                    "Enter project resource path (example: /spaceinvaders/resources/Shooter/Rick.png):");
+                    "Enter project resource path (example: /resources/Shooter/Rick.png):");
 
             if (customPath == null || customPath.isBlank()) {
                 return;

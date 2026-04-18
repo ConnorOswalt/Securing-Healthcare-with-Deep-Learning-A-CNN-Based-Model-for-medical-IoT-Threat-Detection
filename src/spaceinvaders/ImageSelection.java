@@ -18,9 +18,9 @@ public class ImageSelection {
 
     public void setGameImages() {
         shooterImage = loadImage("shooter",
-         "/spaceinvaders/resources/Shooter/ShooterImage.png");
+         "/resources/Shooter/ShooterImage.png");
         invaderImage = loadImage("invader",
-                "/spaceinvaders/resources/Invader/InvaderImage.png");
+                "/resources/Invader/InvaderImage.png");
     }
 
     public void setShooterImageFromResourcePath(String resourcePath) {
