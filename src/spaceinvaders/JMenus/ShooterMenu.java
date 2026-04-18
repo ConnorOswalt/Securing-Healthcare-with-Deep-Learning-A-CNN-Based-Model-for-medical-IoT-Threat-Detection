@@ -3,7 +3,6 @@ package spaceinvaders.JMenus;
 import spaceinvaders.ListenerActions;
 
 import java.awt.event.ActionListener;
-import java.util.Arrays;
 
 public class ShooterMenu extends ParentMenu {
     @Override
@@ -12,17 +11,8 @@ public class ShooterMenu extends ParentMenu {
     }
 
     @Override
-    protected java.util.ArrayList<String> setButtonTitles() {
-        return new java.util.ArrayList<>(java.util.Arrays.asList(
-                "Smile", "Retro", "Sherman Tank", "custom"));
-    }
-
-    @Override
-    protected java.util.ArrayList<String> setButtonPaths() {
-        return new java.util.ArrayList<>(java.util.Arrays.asList(
-                "/resources/Shooter/ShooterImage.png",
-                "/resources/Shooter/Retro.png",
-                "/resources/Shooter/Sherman-Shooter.png"));
+    protected String setResourceDirectory() {
+        return "/resources/Shooter/";
     }
 
     @Override
