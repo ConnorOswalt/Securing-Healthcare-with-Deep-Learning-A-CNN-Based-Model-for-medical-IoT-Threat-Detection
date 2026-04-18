@@ -2,6 +2,7 @@ package spaceinvaders.DataHandlers;
 
 import spaceinvaders.GameExceptions;
 
+import java.io.IOException;
 import java.net.URL;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -66,6 +67,16 @@ public class MusicHandler extends Thread {
     public synchronized void stopThread() {
         running = false;
         notifyAll();
+    }
+
+    public synchronized void stopCurrentTrack() {
+        closeClip();
+    }
+
+    public void playOneShotEffect(String resourcePath) {
+        Thread effectThread = new Thread(() -> playEffectNow(resourcePath), "SoundEffect-Thread");
+        effectThread.setDaemon(true);
+        effectThread.start();
     }
 
     public synchronized void setMuted(boolean muted) {
@@ -166,6 +177,31 @@ public class MusicHandler extends Thread {
             }
             clip.close();
             clip = null;
+        }
+    }
+
+    private void playEffectNow(String resourcePath) {
+        URL effectUrl = MusicHandler.class.getResource(resourcePath);
+        if (effectUrl == null) {
+            GameExceptions.showErrorDialog("Sound effect not found: " + resourcePath);
+            return;
+        }
+
+        try (AudioInputStream audioStream = AudioSystem.getAudioInputStream(effectUrl)) {
+            Clip effectClip = AudioSystem.getClip();
+            effectClip.open(audioStream);
+            effectClip.start();
+
+            long effectDurationMs = Math.max(100L, effectClip.getMicrosecondLength() / 1000L);
+            try {
+                Thread.sleep(effectDurationMs);
+            } catch (InterruptedException e) {
+                GameExceptions.handleInterrupted("Sound effect playback", e);
+            }
+
+            effectClip.close();
+        } catch (UnsupportedAudioFileException | LineUnavailableException | IOException e) {
+            GameExceptions.handleWithDialog("Failed to play sound effect", e);
         }
     }
 }

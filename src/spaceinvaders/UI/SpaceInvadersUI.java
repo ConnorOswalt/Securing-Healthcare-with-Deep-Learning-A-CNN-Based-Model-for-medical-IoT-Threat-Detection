@@ -23,6 +23,7 @@ import javax.swing.*;
 
 public class SpaceInvadersUI extends JPanel implements KeyListener {
     private static SpaceInvadersUI activeInstance;
+    private static final String DEATH_SOUND_EFFECT_PATH = "/resources/SoundEffects/player_death.wav";
 
     private final Timer repaintTimer;
     public ArrayList<Invader> invaders;
@@ -47,6 +48,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private long playerFlashStartTime = 0;
     private static final long PLAYER_FLASH_DURATION = 300;
     private boolean gameOver = false;
+    private boolean deathSoundPlayed = false;
     private long gameOverFlashStartTime = 0;
     private static final long GAME_OVER_FLASH_DURATION = 500; // Flash for 500ms after game over
 
@@ -247,12 +249,23 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     }
 
     public void setGameOver(boolean gameOver) {
+        if (gameOver && this.gameOver) {
+            return;
+        }
+
         this.gameOver = gameOver;
         if (gameOver) {
             fireHeld = false;
             gameOverFlashStartTime = System.currentTimeMillis(); // Record when game ended
             if (gameCalculator != null) {
                 gameCalculator.stopThread();
+            }
+            if (musicHandler != null) {
+                musicHandler.stopCurrentTrack();
+                if (!deathSoundPlayed) {
+                    musicHandler.playOneShotEffect(DEATH_SOUND_EFFECT_PATH);
+                    deathSoundPlayed = true;
+                }
             }
             // DON'T stop the repaintTimer - we need it to display the game over screen
             repaint();
@@ -287,6 +300,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             bullets.clear();
             explosions.clear();
             gameOver = false;
+            deathSoundPlayed = false;
             gameOverFlashStartTime = 0; // Reset game over flash timer
             playerHealth = 3;
             playerFlashing = false;
