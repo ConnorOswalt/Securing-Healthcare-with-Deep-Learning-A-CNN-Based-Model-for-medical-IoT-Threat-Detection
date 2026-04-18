@@ -1,12 +1,26 @@
 package spaceinvaders.scores;
 
 import java.util.*;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class ScoreManager extends Thread {
     private volatile int currentScore = 0;
     private List<ScoreEntry> leaderboard;
     private ScoreFileHandler fileHandler;
     private volatile boolean running = true;
+    
+    // Inner class to hold score save data
+    private static class ScoreSaveTask {
+        String playerName;
+        int score;
+        
+        ScoreSaveTask(String playerName, int score) {
+            this.playerName = playerName;
+            this.score = score;
+        }
+    }
+    
+    private final LinkedBlockingQueue<ScoreSaveTask> saveQueue = new LinkedBlockingQueue<>();
 
     public ScoreManager() {
         fileHandler = new ScoreFileHandler();
@@ -19,10 +33,16 @@ public class ScoreManager extends Thread {
 
     @Override
     public void run() {
-        // Thread runs quietly in the background
+        // Thread processes save operations from the queue
         while (running) {
             try {
-                Thread.sleep(100);
+                // Wait for a save operation (blocks until one is available or timeout)
+                ScoreSaveTask task = saveQueue.poll(100, java.util.concurrent.TimeUnit.MILLISECONDS);
+                
+                if (task != null) {
+                    // Perform the save operation on this thread
+                    performSaveScore(task.playerName, task.score);
+                }
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 break;
@@ -56,14 +76,35 @@ public class ScoreManager extends Thread {
     }
 
     /**
-     * Saves the current score to the leaderboard with the player's name.
-     * Keeps only the top 10 scores and writes to file.
+     * Queues a score save operation to be processed by the ScoreManager thread.
+     * The actual file I/O happens on the ScoreManager thread, not the caller's thread.
+     * The current score is captured at the time this method is called.
      * 
      * @param playerName the name of the player
      */
-    public synchronized void saveScore(String playerName) {
-        // Add new score entry
-        ScoreEntry newEntry = new ScoreEntry(playerName, currentScore);
+    public void saveScore(String playerName) {
+        // Capture the current score value at the time of the save
+        int scoreToSave = currentScore;
+        
+        // Queue the save operation with the captured score
+        try {
+            saveQueue.put(new ScoreSaveTask(playerName, scoreToSave));
+        } catch (InterruptedException e) {
+            System.out.println("Error queueing score save: " + e.getMessage());
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    /**
+     * Performs the actual score saving operation (runs on ScoreManager thread).
+     * This handles file I/O and leaderboard updates.
+     * 
+     * @param playerName the name of the player
+     * @param score the score to save
+     */
+    private synchronized void performSaveScore(String playerName, int score) {
+        // Add new score entry with the provided score
+        ScoreEntry newEntry = new ScoreEntry(playerName, score);
         leaderboard.add(newEntry);
         
         // Sort by score descending
@@ -74,7 +115,7 @@ public class ScoreManager extends Thread {
             leaderboard = new ArrayList<>(leaderboard.subList(0, 10));
         }
         
-        // Write to file
+        // Write to file (I/O operation done on this thread)
         fileHandler.saveScores(leaderboard);
     }
 
