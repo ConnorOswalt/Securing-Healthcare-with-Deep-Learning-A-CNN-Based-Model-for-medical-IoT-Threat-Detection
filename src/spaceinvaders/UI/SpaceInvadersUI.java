@@ -57,6 +57,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private static final long PLAYER_FLASH_DURATION = 300;
     private boolean gameOver = false;
     private boolean deathSoundPlayed = false;
+    private String deathSoundEffectPath = DEATH_SOUND_EFFECT_PATH;
     private long gameOverFlashStartTime = 0;
     private static final long GAME_OVER_FLASH_DURATION = 500; // Flash for 500ms after game over
     private boolean paused = false;
@@ -231,6 +232,18 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         return musicHandler;
     }
 
+    public void setDeathSoundEffectPath(String deathSoundEffectPath) {
+        if (deathSoundEffectPath == null || deathSoundEffectPath.isBlank()) {
+            this.deathSoundEffectPath = DEATH_SOUND_EFFECT_PATH;
+            return;
+        }
+        this.deathSoundEffectPath = deathSoundEffectPath;
+    }
+
+    public String getDefaultDeathSoundEffectPath() {
+        return DEATH_SOUND_EFFECT_PATH;
+    }
+
     public void handleRickRollKill() {
         if (SpaceInvadersUI.class.getResource(RICK_THEME_PATH) != null) {
             ThemeImplementation.requestThemeChange(this, RICK_THEME_PATH);
@@ -308,7 +321,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             if (musicHandler != null) {
                 musicHandler.stopCurrentTrack();
                 if (!deathSoundPlayed) {
-                    musicHandler.playOneShotEffect(DEATH_SOUND_EFFECT_PATH);
+                    musicHandler.playOneShotEffect(deathSoundEffectPath);
                     deathSoundPlayed = true;
                 }
             }
@@ -333,6 +346,11 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     }
 
     private void drawGameOver(Graphics g) {
+        Image deathScreenImage = imageSelection.getDeathScreenImage();
+        if (deathScreenImage != null) {
+            g.drawImage(deathScreenImage, 0, 0, getWidth(), getHeight(), this);
+        }
+
         // Draw red flash effect for a short duration after game over
         if (System.currentTimeMillis() - gameOverFlashStartTime < GAME_OVER_FLASH_DURATION) {
             g.setColor(new Color(255, 0, 0, 180)); // Semi-transparent red

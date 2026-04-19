@@ -16,6 +16,7 @@ public class ImageSelection {
     private Image bulletImage;
     private Image backgroundImage;
     private Image deathSkinImage;
+    private Image deathScreenImage;
     private boolean deathSkinFadeOut = true;
     private boolean starsBackgroundEnabled;
     private final StarsBackgroundPainter starsBackgroundPainter = new StarsBackgroundPainter();
@@ -47,6 +48,10 @@ public class ImageSelection {
         return deathSkinImage;
     }
 
+    public Image getDeathScreenImage() {
+        return deathScreenImage;
+    }
+
     public boolean isDeathSkinFadeOutEnabled() {
         return deathSkinFadeOut;
     }
@@ -62,6 +67,17 @@ public class ImageSelection {
     public void clearDeathSkinImage() {
         deathSkinImage = null;
         deathSkinFadeOut = true;
+    }
+
+    public void setDeathScreenImageFromResourcePath(String resourcePath) {
+        Image loadedImage = loadImage("death screen", resourcePath);
+        if (loadedImage != null) {
+            deathScreenImage = loadedImage;
+        }
+    }
+
+    public void clearDeathScreenImage() {
+        deathScreenImage = null;
     }
 
     public boolean isStarsBackgroundEnabled() {

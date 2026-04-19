@@ -128,6 +128,16 @@ public class ThemeImplementation {
         applyImagePath(game, jsonContent, "bullet", game.imageSelection::setBulletImageFromResourcePath);
         applyImagePath(game, jsonContent, "background", game.imageSelection::setBackgroundImageFromResourcePath);
 
+        String backgroundPath = extractPath(jsonContent, "background");
+        String deathScreenPath = extractPath(jsonContent, "deathscreen");
+        if (deathScreenPath != null) {
+            game.imageSelection.setDeathScreenImageFromResourcePath(deathScreenPath);
+        } else if (backgroundPath != null) {
+            game.imageSelection.setDeathScreenImageFromResourcePath(backgroundPath);
+        } else {
+            game.imageSelection.clearDeathScreenImage();
+        }
+
         // death_skin is optional — clear it if not present in this theme
         String deathSkinPath = extractPath(jsonContent, "death_skin");
         if (deathSkinPath != null) {
@@ -136,6 +146,13 @@ public class ThemeImplementation {
             game.imageSelection.setDeathSkinFadeOut(deathSkinFadeOut == null || deathSkinFadeOut);
         } else {
             game.imageSelection.clearDeathSkinImage();
+        }
+
+        String deathSoundPath = extractPath(jsonContent, "deathsound");
+        if (deathSoundPath != null) {
+            game.setDeathSoundEffectPath(deathSoundPath);
+        } else {
+            game.setDeathSoundEffectPath(game.getDefaultDeathSoundEffectPath());
         }
 
         String musicPath = extractPath(jsonContent, "music");

@@ -5,6 +5,8 @@
   "bullet": "/resources/Bullet/retroProjectile.gif",
   "background": "/resources/Background/Retro.gif",
   "music": "/resources/Music/Retro.wav",
+  "deathscreen": "/resources/Background/Retro.gif",
+  "deathsound": "/resources/SoundEffects/player_death.wav",
   "death_skin": "/resources/Invader/InvaderDeathSkins/retro.gif",
   "death_skin_fade_out": false
 }

@@ -5,6 +5,8 @@
   "bullet": "/resources/Bullet/Tank_Shell.png",
   "background": "/resources/Background/TankBattleground.jpg",
   "music": "/resources/Music/Sabaton.wav",
+  "deathscreen": "/resources/Background/TankBattleground.jpg",
+  "deathsound": "/resources/SoundEffects/player_death.wav",
   "death_skin": "/resources/Invader/TigerII-Invader.png",
   "death_skin_fade_out": true
 }
