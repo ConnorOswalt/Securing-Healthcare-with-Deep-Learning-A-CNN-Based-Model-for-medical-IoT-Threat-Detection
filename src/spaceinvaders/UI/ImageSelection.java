@@ -1,10 +1,13 @@
 package spaceinvaders.UI;
 
 import spaceinvaders.GameExceptions;
+import spaceinvaders.characters.Bullet;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -22,6 +25,9 @@ public class ImageSelection {
     private Image invaderImage;
     private Image rickInvaderImage;
     private Image bulletImage;
+    private List<BufferedImage> bulletGifFrames = Collections.emptyList();
+    private long[] bulletGifFrameEndTimesMs = new long[0];
+    private long bulletGifDurationMs = 0;
     private Image backgroundImage;
     private Image deathSkinImage;
     private Image deathScreenImage;
@@ -47,6 +53,22 @@ public class ImageSelection {
 
     public Image getBulletImage() {
         return bulletImage;
+    }
+
+    public Image getBulletImage(Bullet bullet) {
+        if (bullet == null || bulletGifDurationMs <= 0 || bulletGifFrames.isEmpty()) {
+            return bulletImage;
+        }
+
+        long animationTimeMs = Math.floorMod(System.currentTimeMillis() + bullet.getAnimationOffsetMs(),
+                bulletGifDurationMs);
+        for (int i = 0; i < bulletGifFrameEndTimesMs.length; i++) {
+            if (animationTimeMs < bulletGifFrameEndTimesMs[i]) {
+                return bulletGifFrames.get(i);
+            }
+        }
+
+        return bulletGifFrames.get(bulletGifFrames.size() - 1);
     }
 
     public Image getBackgroundImage() {
@@ -150,6 +172,7 @@ public class ImageSelection {
     public void restoreDefaultThemeState(SpaceInvadersUI game) {
         setGameImages();
         bulletImage = null;
+        clearBulletGifFrames();
         clearDeathSkinImage();
         clearDeathScreenImage();
         enableStarsBackground(game);
@@ -173,6 +196,13 @@ public class ImageSelection {
         Image loadedImage = loadImage("bullet", resourcePath);
         if (loadedImage != null) {
             bulletImage = loadedImage;
+        }
+
+        URL url = ImageSelection.class.getResource(resourcePath);
+        if (url != null && resourcePath.toLowerCase().endsWith(".gif")) {
+            loadBulletGifFrames(url);
+        } else {
+            clearBulletGifFrames();
         }
     }
 
@@ -207,5 +237,61 @@ public class ImageSelection {
             return null;
         }
         return new ImageIcon(url).getImage();
+    }
+
+    private void loadBulletGifFrames(URL url) {
+        try (ImageInputStream iis = ImageIO.createImageInputStream(url.openStream())) {
+            Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("gif");
+            if (!readers.hasNext()) {
+                clearBulletGifFrames();
+                return;
+            }
+
+            ImageReader reader = readers.next();
+            reader.setInput(iis);
+            int numFrames = reader.getNumImages(true);
+            List<BufferedImage> frames = new ArrayList<>(numFrames);
+            long[] frameEndTimesMs = new long[numFrames];
+            long totalMs = 0;
+
+            for (int i = 0; i < numFrames; i++) {
+                frames.add(reader.read(i));
+                long delayMs = extractGifFrameDelayMs(reader.getImageMetadata(i));
+                if (delayMs <= 0) {
+                    delayMs = 100;
+                }
+                totalMs += delayMs;
+                frameEndTimesMs[i] = totalMs;
+            }
+
+            reader.dispose();
+            bulletGifFrames = frames;
+            bulletGifFrameEndTimesMs = frameEndTimesMs;
+            bulletGifDurationMs = totalMs;
+        } catch (IOException | RuntimeException e) {
+            clearBulletGifFrames();
+        }
+    }
+
+    private void clearBulletGifFrames() {
+        bulletGifFrames = Collections.emptyList();
+        bulletGifFrameEndTimesMs = new long[0];
+        bulletGifDurationMs = 0;
+    }
+
+    private static long extractGifFrameDelayMs(IIOMetadata meta) {
+        Node root = meta.getAsTree("javax_imageio_gif_image_1.0");
+        Node child = root.getFirstChild();
+        while (child != null) {
+            if ("GraphicControlExtension".equals(child.getNodeName())) {
+                NamedNodeMap attrs = child.getAttributes();
+                Node delayNode = attrs.getNamedItem("delayTime");
+                if (delayNode != null) {
+                    return Long.parseLong(delayNode.getNodeValue()) * 10L;
+                }
+            }
+            child = child.getNextSibling();
+        }
+        return 0;
     }
 }

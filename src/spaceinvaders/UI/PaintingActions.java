@@ -98,8 +98,8 @@ public class PaintingActions {
             bulletsCopy = new ArrayList<>(game.bullets);
         }
 
-        Image bulletImage = game.imageSelection.getBulletImage();
         for (Bullet bullet : bulletsCopy) {
+            Image bulletImage = game.imageSelection.getBulletImage(bullet);
             if (bulletImage != null) {
                 // Render image/gif centred on bullet x, tip at bullet y
                 g.drawImage(bulletImage, bullet.getX() - 12, bullet.getY(), 24, 40, game);
