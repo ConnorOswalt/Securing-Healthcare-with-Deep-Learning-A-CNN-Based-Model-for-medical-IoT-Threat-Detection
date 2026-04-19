@@ -6,5 +6,5 @@ Anonymous,170
 Player Name,80
 Player Name,70
 Anonymous,60
+Player Name,20
 Player Name,0
-Anonymous,0

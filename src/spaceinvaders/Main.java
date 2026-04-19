@@ -32,8 +32,14 @@ public class Main {
                 viewLeaderboardItem.setEnabled(enableLeaderboardItem.isSelected());
             });
             scoresMenu.add(enableLeaderboardItem);
+
+            JMenu sillyMenu = new JMenu("Silly");
+            JCheckBoxMenuItem sillinessModeItem = new JCheckBoxMenuItem("Silliness Mode", true);
+            sillinessModeItem.addActionListener(e -> game.setSillinessModeEnabled(sillinessModeItem.isSelected()));
+            sillyMenu.add(sillinessModeItem);
             
             menuBar.add(scoresMenu);
+            menuBar.add(sillyMenu);
             
             frame.setJMenuBar(menuBar);
             frame.setVisible(true);

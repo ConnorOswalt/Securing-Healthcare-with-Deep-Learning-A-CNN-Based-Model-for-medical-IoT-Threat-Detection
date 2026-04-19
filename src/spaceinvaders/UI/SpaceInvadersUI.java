@@ -24,6 +24,16 @@ import java.util.Random;
 import javax.swing.*;
 
 public class SpaceInvadersUI extends JPanel implements KeyListener {
+    public enum SillyModifier {
+        NONE,
+        MOON_GRAVITY,
+        ZOOMIES,
+        TINY_PANIC,
+        MIRROR,
+        DISCO,
+        PACIFIST
+    }
+
     private static SpaceInvadersUI activeInstance;
     private static final String DEATH_SOUND_EFFECT_PATH = "/resources/SoundEffects/player_death.wav";
     private static final String RICK_THEME_PATH = "/resources/Themes/Rick.json";
@@ -61,6 +71,17 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private long gameOverFlashStartTime = 0;
     private static final long GAME_OVER_FLASH_DURATION = 500; // Flash for 500ms after game over
     private boolean paused = false;
+    private boolean sillinessModeEnabled = true;
+    private SillyModifier activeSillyModifier = SillyModifier.NONE;
+    private long activeModifierUntilMs = 0;
+    private String announcerMessage = "";
+    private long announcerMessageUntilMs = 0;
+    private String fakeAchievementMessage = "";
+    private long fakeAchievementUntilMs = 0;
+    private String comboMessage = "";
+    private long comboMessageUntilMs = 0;
+    private int comboCount = 0;
+    private long comboWindowUntilMs = 0;
 
     // Constructor
     public SpaceInvadersUI() {
@@ -176,6 +197,53 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         // Draw current score
         paintingActions.drawCurrentScore(g, this);
+
+        drawSillyOverlay(g);
+    }
+
+    private void drawSillyOverlay(Graphics g) {
+        long now = System.currentTimeMillis();
+        Graphics2D g2d = (Graphics2D) g;
+
+        if (sillinessModeEnabled && activeSillyModifier == SillyModifier.DISCO && now < activeModifierUntilMs) {
+            float phase = (now % 1200L) / 1200.0f;
+            Color disco = Color.getHSBColor(phase, 0.7f, 1.0f);
+            g2d.setColor(new Color(disco.getRed(), disco.getGreen(), disco.getBlue(), 45));
+            g2d.fillRect(0, 0, getWidth(), getHeight());
+        }
+
+        g2d.setFont(new Font("Arial", Font.BOLD, 20));
+        FontMetrics fm = g2d.getFontMetrics();
+
+        if (!announcerMessage.isEmpty() && now < announcerMessageUntilMs) {
+            int w = fm.stringWidth(announcerMessage);
+            int x = (getWidth() - w) / 2;
+            int y = 36;
+            g2d.setColor(new Color(0, 0, 0, 170));
+            g2d.fillRoundRect(x - 12, y - 22, w + 24, 30, 14, 14);
+            g2d.setColor(new Color(255, 230, 40));
+            g2d.drawString(announcerMessage, x, y);
+        }
+
+        if (!fakeAchievementMessage.isEmpty() && now < fakeAchievementUntilMs) {
+            int w = fm.stringWidth(fakeAchievementMessage);
+            int x = (getWidth() - w) / 2;
+            int y = getHeight() - 28;
+            g2d.setColor(new Color(10, 10, 10, 190));
+            g2d.fillRoundRect(x - 12, y - 22, w + 24, 30, 14, 14);
+            g2d.setColor(new Color(90, 255, 150));
+            g2d.drawString(fakeAchievementMessage, x, y);
+        }
+
+        if (!comboMessage.isEmpty() && now < comboMessageUntilMs) {
+            int w = fm.stringWidth(comboMessage);
+            int x = getWidth() - w - 14;
+            int y = 50;
+            g2d.setColor(new Color(0, 0, 0, 160));
+            g2d.fillRoundRect(x - 8, y - 20, w + 16, 28, 10, 10);
+            g2d.setColor(new Color(255, 170, 50));
+            g2d.drawString(comboMessage, x, y);
+        }
     }
 
     public int getShooterWidth() {
@@ -230,6 +298,80 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
     public MusicHandler getMusicHandler() {
         return musicHandler;
+    }
+
+    public boolean isSillinessModeEnabled() {
+        return sillinessModeEnabled;
+    }
+
+    public void setSillinessModeEnabled(boolean sillinessModeEnabled) {
+        this.sillinessModeEnabled = sillinessModeEnabled;
+        if (!sillinessModeEnabled) {
+            clearActiveSillyModifier();
+        }
+    }
+
+    public SillyModifier getActiveSillyModifier() {
+        return activeSillyModifier;
+    }
+
+    public boolean isMirrorControlsActive() {
+        return sillinessModeEnabled && activeSillyModifier == SillyModifier.MIRROR
+                && System.currentTimeMillis() < activeModifierUntilMs;
+    }
+
+    public boolean isPacifistModeActive() {
+        return sillinessModeEnabled && activeSillyModifier == SillyModifier.PACIFIST
+                && System.currentTimeMillis() < activeModifierUntilMs;
+    }
+
+    public void activateSillyModifier(SillyModifier modifier, long durationMs, String bannerText) {
+        this.activeSillyModifier = modifier;
+        this.activeModifierUntilMs = System.currentTimeMillis() + durationMs;
+        setAnnouncerMessage(bannerText, 2600);
+    }
+
+    public void clearActiveSillyModifier() {
+        this.activeSillyModifier = SillyModifier.NONE;
+        this.activeModifierUntilMs = 0;
+    }
+
+    public boolean isModifierExpired() {
+        return activeSillyModifier != SillyModifier.NONE && System.currentTimeMillis() >= activeModifierUntilMs;
+    }
+
+    public void setAnnouncerMessage(String message, long durationMs) {
+        this.announcerMessage = message == null ? "" : message;
+        this.announcerMessageUntilMs = System.currentTimeMillis() + durationMs;
+    }
+
+    public void setFakeAchievementMessage(String message, long durationMs) {
+        this.fakeAchievementMessage = message == null ? "" : message;
+        this.fakeAchievementUntilMs = System.currentTimeMillis() + durationMs;
+    }
+
+    public void recordInvaderDefeatCombo() {
+        long now = System.currentTimeMillis();
+        if (now > comboWindowUntilMs) {
+            comboCount = 0;
+        }
+        comboCount++;
+        comboWindowUntilMs = now + 1800;
+
+        if (comboCount >= 2) {
+            comboMessage = getComboTitle(comboCount) + " x" + comboCount;
+            comboMessageUntilMs = now + 1400;
+        }
+    }
+
+    private String getComboTitle(int comboCount) {
+        if (comboCount >= 8) {
+            return "Cosmic Bonk";
+        }
+        if (comboCount >= 5) {
+            return "Mega Bonk";
+        }
+        return "Double Bonk";
     }
 
     public void setDeathSoundEffectPath(String deathSoundEffectPath) {
@@ -426,6 +568,12 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             moveLeft = false;
             moveRight = false;
             fireHeld = false;
+            clearActiveSillyModifier();
+            announcerMessage = "";
+            fakeAchievementMessage = "";
+            comboMessage = "";
+            comboCount = 0;
+            comboWindowUntilMs = 0;
         }
 
         // Reset the current score for the new game

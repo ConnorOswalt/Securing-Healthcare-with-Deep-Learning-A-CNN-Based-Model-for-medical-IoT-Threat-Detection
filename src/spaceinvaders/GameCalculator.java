@@ -24,7 +24,25 @@ public class GameCalculator extends Thread {
     private static final long FIRE_INTERVAL_MS = 150;
     private static final long EXPLOSION_DURATION_MS = 300;
     private static final int RICK_INVADER_CHANCE_PERCENT = 2;
+        private static final long MODIFIER_DURATION_MS = 8000;
     private long lastFireTimeMs = 0;
+        private long nextModifierRollMs = System.currentTimeMillis() + 15000;
+        private long nextAchievementMs = System.currentTimeMillis() + 12000;
+        private int spawnCounter = 0;
+
+        private static final String[] BOSS_ROASTS = {
+            "Boss Roast: You fight like a loading bar",
+            "Boss Roast: Your aim has trust issues",
+            "Boss Roast: Even invaders feel bad for you",
+            "Boss Roast: Who taught you dodging, a potato?"
+        };
+
+        private static final String[] FAKE_ACHIEVEMENTS = {
+            "Achievement Unlocked: Professional Button Presser",
+            "Achievement Unlocked: Certified Space Janitor",
+            "Achievement Unlocked: Panic Strategist",
+            "Achievement Unlocked: Physics? Optional"
+        };
 
     public GameCalculator(SpaceInvadersUI game) {
         this.game = game;
@@ -60,6 +78,8 @@ public class GameCalculator extends Thread {
         if (game.isPaused()) {
             return;
         }
+
+        updateSillyModeState();
         
         updateShooterPosition();
         handleShooting();
@@ -69,6 +89,65 @@ public class GameCalculator extends Thread {
         updateExplosions();
         updateDeathEffects();
         spawnNewInvaders();
+    }
+
+    private void updateSillyModeState() {
+        long now = System.currentTimeMillis();
+
+        if (!game.isSillinessModeEnabled()) {
+            return;
+        }
+
+        if (game.isModifierExpired()) {
+            game.clearActiveSillyModifier();
+            game.setAnnouncerMessage("Modifier ended. Back to normal chaos.", 1500);
+        }
+
+        if (now >= nextModifierRollMs && game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.NONE) {
+            activateRandomModifier();
+            nextModifierRollMs = now + 20000 + game.random.nextInt(20000);
+        }
+
+        if (now >= nextAchievementMs) {
+            String achievement = FAKE_ACHIEVEMENTS[game.random.nextInt(FAKE_ACHIEVEMENTS.length)];
+            game.setFakeAchievementMessage(achievement, 2400);
+            nextAchievementMs = now + 16000 + game.random.nextInt(9000);
+        }
+    }
+
+    private void activateRandomModifier() {
+        SpaceInvadersUI.SillyModifier[] modifiers = {
+                SpaceInvadersUI.SillyModifier.MOON_GRAVITY,
+                SpaceInvadersUI.SillyModifier.ZOOMIES,
+                SpaceInvadersUI.SillyModifier.TINY_PANIC,
+                SpaceInvadersUI.SillyModifier.MIRROR,
+                SpaceInvadersUI.SillyModifier.DISCO,
+                SpaceInvadersUI.SillyModifier.PACIFIST
+        };
+
+        SpaceInvadersUI.SillyModifier selected = modifiers[game.random.nextInt(modifiers.length)];
+        String roast = BOSS_ROASTS[game.random.nextInt(BOSS_ROASTS.length)];
+        String banner = getModifierBanner(selected) + " | " + roast;
+        game.activateSillyModifier(selected, MODIFIER_DURATION_MS, banner);
+    }
+
+    private String getModifierBanner(SpaceInvadersUI.SillyModifier modifier) {
+        switch (modifier) {
+        case MOON_GRAVITY:
+            return "Moon Gravity Mode!";
+        case ZOOMIES:
+            return "Zoomies Mode!";
+        case TINY_PANIC:
+            return "Tiny Panic Mode!";
+        case MIRROR:
+            return "Mirror Controls Mode!";
+        case DISCO:
+            return "Disco Mode!";
+        case PACIFIST:
+            return "Pacifist Mode!";
+        default:
+            return "Silly Mode!";
+        }
     }
 
     private void updateExplosions() {
@@ -104,6 +183,14 @@ public class GameCalculator extends Thread {
                 return;
             }
 
+            if (game.isPacifistModeActive()) {
+                int centerX = game.getShooter_X_Coordinate() + game.getShooterWidth() / 2;
+                int centerY = game.getHeight() - game.getShooterHeight();
+                game.explosions.add(new Explosion(centerX, centerY, 10, 140));
+                lastFireTimeMs = now;
+                return;
+            }
+
             int shooterX = game.getShooter_X_Coordinate();
             int shooterWidth = game.getShooterWidth();
             int shooterHeight = game.getShooterHeight();
@@ -116,13 +203,14 @@ public class GameCalculator extends Thread {
         synchronized (game) {
             int shooter_X_Coordinate = game.getShooter_X_Coordinate();
             int shooter_Width = game.getShooterWidth();
+            int movementStep = game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.ZOOMIES ? 9 : 5;
             
             // Move shooter left or right
             if (game.moveLeft && shooter_X_Coordinate > 0) {
-                game.setShooter_X_Coordinate(shooter_X_Coordinate - 5);
+                game.setShooter_X_Coordinate(shooter_X_Coordinate - movementStep);
             }
             if (game.moveRight && shooter_X_Coordinate < game.getWidth() - shooter_Width) {
-                game.setShooter_X_Coordinate(shooter_X_Coordinate + 5);
+                game.setShooter_X_Coordinate(shooter_X_Coordinate + movementStep);
             }
         }
     }
@@ -132,7 +220,19 @@ public class GameCalculator extends Thread {
             if (game.random.nextInt(100) < 5) {
                 int x = game.random.nextInt(game.getWidth());
                 boolean isRickInvader = game.random.nextInt(100) < RICK_INVADER_CHANCE_PERCENT;
-                game.invaders.add(new Invader(x, 0, 40, isRickInvader));
+                spawnCounter++;
+
+                int baseSize = 40;
+                if (game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.TINY_PANIC) {
+                    baseSize = 20;
+                }
+
+                // Big-head gag: every 7th invader is oversized.
+                if (game.isSillinessModeEnabled() && spawnCounter % 7 == 0) {
+                    baseSize = Math.max(baseSize, 72);
+                }
+
+                game.invaders.add(new Invader(x, 0, baseSize, isRickInvader));
             }
         }
     }
@@ -143,7 +243,14 @@ public class GameCalculator extends Thread {
             while (invaderIterator.hasNext()) {
                 Invader invader = invaderIterator.next();
                 int y = invader.getY();
-                invader.setY(y + 2);
+                int step = 2;
+                if (game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.MOON_GRAVITY) {
+                    step = 1;
+                } else if (game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.ZOOMIES) {
+                    step = 4;
+                }
+
+                invader.setY(y + step);
                 if (invader.getY() > game.getHeight()) {
                     invaderIterator.remove();
                 }
@@ -157,7 +264,16 @@ public class GameCalculator extends Thread {
             while (bulletIterator.hasNext()) {
                 Bullet bullet = bulletIterator.next();
                 int y = bullet.getY();
-                bullet.setY(y - 5);
+                int yStep = 5;
+                if (game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.MOON_GRAVITY) {
+                    yStep = 3;
+                    int drift = (int) Math.signum(Math.sin((bullet.getY() + bullet.getX()) * 0.07));
+                    bullet.setX(Math.max(0, Math.min(game.getWidth(), bullet.getX() + drift)));
+                } else if (game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.ZOOMIES) {
+                    yStep = 8;
+                }
+
+                bullet.setY(y - yStep);
                 if (bullet.getY() < 0) {
                     bulletIterator.remove();
                 }
@@ -183,7 +299,9 @@ public class GameCalculator extends Thread {
                         addExplosionForInvader(invader);
                         bulletIterator.remove();
                         invaderIterator.remove();
-                        game.addPoints(10);
+                        game.recordInvaderDefeatCombo();
+                        int points = game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.TINY_PANIC ? 20 : 10;
+                        game.addPoints(points);
                         break;
                     }
                 }
@@ -224,6 +342,11 @@ public class GameCalculator extends Thread {
             synchronized (game) {
                 game.deathEffects.add(new DeathEffect(invader.getX(), invader.getY(), invader.getSize(), deathSkin,
                         game.imageSelection.isDeathSkinFadeOutEnabled()));
+            }
+
+            // Big-head invaders do a bonus squeak (reuses available effect asset).
+            if (invader.getSize() >= 70 && game.getMusicHandler() != null) {
+                game.getMusicHandler().playOneShotEffect(game.getDefaultDeathSoundEffectPath());
             }
             return;
         }

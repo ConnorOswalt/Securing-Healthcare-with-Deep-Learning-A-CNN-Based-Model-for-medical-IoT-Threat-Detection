@@ -33,11 +33,20 @@ public class ListenerActions {
 
     public void keyPressed(KeyEvent e, SpaceInvadersUI game) {
         int key = e.getKeyCode();
+        boolean mirror = game.isMirrorControlsActive();
         if (key == KeyEvent.VK_LEFT) {
-            game.moveLeft = true;
+            if (mirror) {
+                game.moveRight = true;
+            } else {
+                game.moveLeft = true;
+            }
         }
         if (key == KeyEvent.VK_RIGHT) {
-            game.moveRight = true;
+            if (mirror) {
+                game.moveLeft = true;
+            } else {
+                game.moveRight = true;
+            }
         }
         if (key == KeyEvent.VK_SPACE) {
             game.fireHeld = true;
@@ -70,11 +79,20 @@ public class ListenerActions {
 
     public void keyReleased(KeyEvent e, SpaceInvadersUI game) {
         int key = e.getKeyCode();
+        boolean mirror = game.isMirrorControlsActive();
         if (key == KeyEvent.VK_LEFT) {
-            game.moveLeft = false;
+            if (mirror) {
+                game.moveRight = false;
+            } else {
+                game.moveLeft = false;
+            }
         }
         if (key == KeyEvent.VK_RIGHT) {
-            game.moveRight = false;
+            if (mirror) {
+                game.moveLeft = false;
+            } else {
+                game.moveRight = false;
+            }
         }
         if (key == KeyEvent.VK_SPACE) {
             game.fireHeld = false;
