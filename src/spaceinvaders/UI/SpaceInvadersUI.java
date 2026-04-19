@@ -19,6 +19,7 @@ import spaceinvaders.UI.JMenus.ThemesMenu;
 
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -242,6 +243,8 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private void drawSillyOverlay(Graphics g) {
         long now = System.currentTimeMillis();
         Graphics2D g2d = (Graphics2D) g;
+        Font originalFont = g2d.getFont();
+        AffineTransform originalTransform = g2d.getTransform();
 
         if (sillinessModeEnabled && activeSillyModifier == SillyModifier.DISCO && now < activeModifierUntilMs) {
             float phase = (now % 1200L) / 1200.0f;
@@ -250,20 +253,52 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             g2d.fillRect(0, 0, getWidth(), getHeight());
         }
 
-        g2d.setFont(new Font("Arial", Font.BOLD, 22));
+        g2d.setFont(new Font("Arial", Font.BOLD, 18));
         FontMetrics fm = g2d.getFontMetrics();
 
         if (!announcerMessage.isEmpty() && now < announcerMessageUntilMs) {
             int w = fm.stringWidth(announcerMessage);
             int x = (getWidth() - w) / 2;
-            int y = 34;
+            int y = Math.max(84, getHeight() / 3);
             g2d.setColor(new Color(0, 0, 0, 170));
-            g2d.fillRoundRect(x - 12, y - 22, w + 24, 32, 14, 14);
+            g2d.fillRoundRect(x - 18, y - 28, w + 36, 40, 16, 16);
+            g2d.setColor(new Color(255, 255, 255, 35));
+            g2d.drawRoundRect(x - 18, y - 28, w + 36, 40, 16, 16);
             g2d.setColor(Color.WHITE);
             g2d.drawString(announcerMessage, x, y);
         }
 
+        if (sillinessModeEnabled && activeSillyModifier != SillyModifier.NONE && now < activeModifierUntilMs) {
+            String effectName = getActiveEffectDisplayName();
+            long remainingMs = Math.max(0, activeModifierUntilMs - now);
+            float remainingRatio = Math.min(1.0f, remainingMs / 8000.0f);
+            int panelWidth = 220;
+            int panelHeight = 58;
+            int panelX = getWidth() - panelWidth - 18;
+            int panelY = 34;
+
+            g2d.setColor(new Color(0, 0, 0, 170));
+            g2d.fillRoundRect(panelX, panelY, panelWidth, panelHeight, 16, 16);
+            g2d.setColor(new Color(255, 255, 255, 40));
+            g2d.drawRoundRect(panelX, panelY, panelWidth, panelHeight, 16, 16);
+
+            g2d.setFont(new Font("Arial", Font.BOLD, 12));
+            g2d.setColor(new Color(180, 220, 255));
+            g2d.drawString("CURRENT EFFECT", panelX + 12, panelY + 18);
+
+            g2d.setFont(new Font("Arial", Font.BOLD, 18));
+            g2d.setColor(Color.WHITE);
+            g2d.drawString(effectName, panelX + 12, panelY + 38);
+
+            g2d.setColor(new Color(45, 45, 45, 210));
+            g2d.fillRoundRect(panelX + 12, panelY + 43, panelWidth - 24, 8, 8, 8);
+            g2d.setColor(new Color(255, 120, 60));
+            g2d.fillRoundRect(panelX + 12, panelY + 43, (int) ((panelWidth - 24) * remainingRatio), 8, 8, 8);
+        }
+
         if (!fakeAchievementMessage.isEmpty() && now < fakeAchievementUntilMs) {
+            g2d.setFont(new Font("Arial", Font.BOLD, 22));
+            fm = g2d.getFontMetrics();
             int w = fm.stringWidth(fakeAchievementMessage);
             int x = (getWidth() - w) / 2;
             int y = getHeight() - 28;
@@ -274,14 +309,37 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         }
 
         if (!comboMessage.isEmpty() && now < comboMessageUntilMs) {
-            int w = fm.stringWidth(comboMessage);
-            int x = getWidth() - w - 14;
-            int y = 50;
+            float pulse = 1.0f + 0.18f * (float) Math.sin(now * 0.018);
+            Font comboFont = new Font("Arial", Font.BOLD, 24);
+            g2d.setFont(comboFont);
+            FontMetrics comboFm = g2d.getFontMetrics();
+            int w = comboFm.stringWidth(comboMessage);
+            int x = getWidth() - w - 18;
+            int y = (sillinessModeEnabled && activeSillyModifier != SillyModifier.NONE && now < activeModifierUntilMs)
+                    ? 136
+                    : 96;
             g2d.setColor(new Color(0, 0, 0, 160));
-            g2d.fillRoundRect(x - 8, y - 20, w + 16, 28, 10, 10);
-            g2d.setColor(new Color(255, 170, 50));
-            g2d.drawString(comboMessage, x, y);
+            g2d.fillRoundRect(x - 16, y - 30, w + 32, 42, 14, 14);
+            g2d.translate(x + w / 2.0, y - 10.0);
+            g2d.scale(pulse, pulse);
+            g2d.setColor(new Color(255, 220, 90));
+            g2d.drawString(comboMessage, -comboFm.stringWidth(comboMessage) / 2, comboFm.getAscent() / 2);
+            g2d.setTransform(originalTransform);
         }
+
+        g2d.setFont(originalFont);
+    }
+
+    private String getActiveEffectDisplayName() {
+        return switch (activeSillyModifier) {
+            case MOON_GRAVITY -> "MOON GRAVITY";
+            case ZOOMIES -> "ZOOMIES";
+            case TINY_PANIC -> "TINY PANIC";
+            case MIRROR -> "MIRROR";
+            case DISCO -> "DISCO";
+            case PACIFIST -> "WEAPON JAM";
+            default -> "NONE";
+        };
     }
 
     public int getShooterWidth() {
