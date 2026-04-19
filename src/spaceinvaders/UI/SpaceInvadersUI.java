@@ -304,19 +304,58 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             g.fillRect(0, 0, getWidth(), getHeight());
         }
 
-        g.setColor(Color.RED);
-        g.setFont(new Font("Arial", Font.BOLD, 48));
-        FontMetrics fm = g.getFontMetrics();
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(java.awt.RenderingHints.KEY_TEXT_ANTIALIASING, 
+                             java.awt.RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        
+        g2d.setFont(new Font("Arial", Font.BOLD, 48));
+        FontMetrics fm = g2d.getFontMetrics();
         String gameOverText = "GAME OVER";
-        int textWidth = fm.stringWidth(gameOverText);
         int textHeight = fm.getAscent();
-        g.drawString(gameOverText, (getWidth() - textWidth) / 2, (getHeight() + textHeight) / 2);
+        int textWidth = fm.stringWidth(gameOverText);
+        int baseX = (getWidth() - textWidth) / 2;
+        int baseY = (getHeight() + textHeight) / 2;
+        
+        // Calculate wave animation
+        long timeSinceGameOver = System.currentTimeMillis() - gameOverFlashStartTime;
+        double wavePhase = (timeSinceGameOver % 2000) / 2000.0; // 2 second cycle
+        
+        // Draw each letter with wave effect
+        int xOffset = baseX;
+        for (int i = 0; i < gameOverText.length(); i++) {
+            char c = gameOverText.charAt(i);
+            
+            // Calculate vertical offset for this letter using sine wave
+            double letterPhase = wavePhase * Math.PI * 2 + (i * 0.4);
+            double yOffset = Math.sin(letterPhase) * 8; // Wave amplitude of 8 pixels
+            
+            int charWidth = fm.charWidth(c);
+            
+            // Draw shadow
+            g2d.setColor(new Color(0, 0, 0, 200));
+            g2d.drawString(String.valueOf(c), xOffset + 3, (int)(baseY + yOffset + 3));
+            
+            // Draw letter
+            g2d.setColor(Color.RED);
+            g2d.drawString(String.valueOf(c), xOffset, (int)(baseY + yOffset));
+            
+            xOffset += charWidth;
+        }
 
-        g.setFont(new Font("Arial", Font.PLAIN, 24));
-        fm = g.getFontMetrics();
+        g2d.setFont(new Font("Arial", Font.PLAIN, 24));
+        fm = g2d.getFontMetrics();
         String restartText = "Press R to restart";
         textWidth = fm.stringWidth(restartText);
-        g.drawString(restartText, (getWidth() - textWidth) / 2, (getHeight() + textHeight) / 2 + 60);
+        int restartX = (getWidth() - textWidth) / 2;
+        int restartY = (getHeight() + textHeight) / 2 + 60;
+        
+        // Draw shadow for restart text
+        g2d.setColor(new Color(0, 0, 0, 150)); // Dark shadow
+        g2d.drawString(restartText, restartX + 2, restartY + 2);
+        
+        // Draw restart text
+        g2d.setColor(Color.YELLOW);
+        g2d.drawString(restartText, restartX, restartY);
     }
 
     public void restartGame() {
