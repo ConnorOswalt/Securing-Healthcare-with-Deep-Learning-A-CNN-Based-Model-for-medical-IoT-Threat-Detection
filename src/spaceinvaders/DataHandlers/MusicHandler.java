@@ -145,6 +145,13 @@ public class MusicHandler extends Thread {
         interruptedTrackPositionUs = 0;
     }
 
+    public synchronized boolean isTrackActive(String resourcePath) {
+        if (resourcePath == null || resourcePath.isBlank()) {
+            return false;
+        }
+        return clip != null && currentTrackResourcePath != null && currentTrackResourcePath.equals(resourcePath);
+    }
+
     public synchronized void stopThread() {
         running = false;
         effectExecutor.shutdownNow();

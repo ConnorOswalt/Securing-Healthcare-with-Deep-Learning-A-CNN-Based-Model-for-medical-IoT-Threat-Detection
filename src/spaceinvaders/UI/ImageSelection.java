@@ -21,9 +21,11 @@ import org.w3c.dom.Node;
 
 public class ImageSelection {
     private static final String RICK_INVADER_IMAGE_PATH = "/resources/Shooter/Rick.png";
+    private static final String LASER_BEAM_IMAGE_PATH = "/resources/sfx/LAZER.gif";
     private Image shooterImage;
     private Image invaderImage;
     private Image rickInvaderImage;
+    private Image laserBeamImage;
     private Image bulletImage;
     private List<BufferedImage> bulletGifFrames = Collections.emptyList();
     private long[] bulletGifFrameEndTimesMs = new long[0];
@@ -49,6 +51,13 @@ public class ImageSelection {
             rickInvaderImage = loadImageIfPresent(RICK_INVADER_IMAGE_PATH);
         }
         return rickInvaderImage;
+    }
+
+    public Image getLaserBeamImage() {
+        if (laserBeamImage == null) {
+            laserBeamImage = loadImageIfPresent(LASER_BEAM_IMAGE_PATH);
+        }
+        return laserBeamImage;
     }
 
     public Image getBulletImage() {

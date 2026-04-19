@@ -214,9 +214,18 @@ public class PaintingActions {
         if (game.laserBeamX < 0 || System.currentTimeMillis() > game.laserBeamUntilMs) return;
         Graphics2D g2d = (Graphics2D) g;
         Composite orig = g2d.getComposite();
-        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.55f));
-        g2d.setColor(new Color(255, 80, 255));
-        g2d.fillRect(game.laserBeamX - 10, 0, 20, game.getHeight());
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.78f));
+        g2d.setColor(new Color(255, 120, 255));
+        g2d.fillRect(game.laserBeamX - 12, 0, 24, game.getHeight());
+
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.9f));
+        Image laserBeamImage = game.imageSelection.getLaserBeamImage();
+        if (laserBeamImage != null) {
+            g2d.drawImage(laserBeamImage, game.laserBeamX - 26, 0, 52, game.getHeight(), game);
+        } else {
+            g2d.setColor(new Color(255, 80, 255));
+            g2d.fillRect(game.laserBeamX - 10, 0, 20, game.getHeight());
+        }
         g2d.setComposite(orig);
     }
 
@@ -238,7 +247,6 @@ public class PaintingActions {
             case PIERCING    -> "PIERCING";
             case SHOTGUN     -> "SHOTGUN";
             case LASER_BEAM  -> "LASER BEAM";
-            case BOUNCING    -> "BOUNCING";
             default          -> "";
         };
 

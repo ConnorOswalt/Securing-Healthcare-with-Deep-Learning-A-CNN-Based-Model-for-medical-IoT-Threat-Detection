@@ -40,7 +40,6 @@ public class PowerUp {
             case PIERCING    -> "PIERCE";
             case SHOTGUN     -> "BLAST";
             case LASER_BEAM  -> "LASER";
-            case BOUNCING    -> "BOUNCE";
             default          -> "?";
         };
     }
@@ -52,7 +51,6 @@ public class PowerUp {
             case PIERCING    -> new Color(200, 255, 80);
             case SHOTGUN     -> new Color(255, 165, 0);
             case LASER_BEAM  -> new Color(255, 50,  255);
-            case BOUNCING    -> new Color(80,  255, 180);
             default          -> Color.WHITE;
         };
     }

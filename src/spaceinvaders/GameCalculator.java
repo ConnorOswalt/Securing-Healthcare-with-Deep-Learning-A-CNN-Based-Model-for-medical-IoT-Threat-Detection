@@ -27,19 +27,13 @@ public class GameCalculator extends Thread {
     private static final int RICK_INVADER_CHANCE_PERCENT = 2;
         private static final long MODIFIER_DURATION_MS = 8000;
     private static final long POWER_UP_DURATION_MS = 8000;
-    private static final long LASER_BEAM_FLASH_MS = 120;
+    private static final long LASER_BEAM_FLASH_MS = 220;
+        private static final int LASER_BEAM_HALF_WIDTH_PX = 26;
     private long lastFireTimeMs = 0;
     private long nextModifierRollMs = System.currentTimeMillis() + 15000;
     private long nextAchievementMs = System.currentTimeMillis() + 12000;
     private long nextPowerUpSpawnMs = System.currentTimeMillis() + 18000;
     private int spawnCounter = 0;
-
-        private static final String[] BOSS_ROASTS = {
-            "Boss Roast: You fight like a loading bar",
-            "Boss Roast: Your aim has trust issues",
-            "Boss Roast: Even invaders feel bad for you",
-            "Boss Roast: Who taught you dodging, a potato?"
-        };
 
         private static final String[] FAKE_ACHIEVEMENTS = {
             "Achievement Unlocked: Professional Button Presser",
@@ -134,9 +128,7 @@ public class GameCalculator extends Thread {
         };
 
         SpaceInvadersUI.SillyModifier selected = modifiers[game.random.nextInt(modifiers.length)];
-        String roast = BOSS_ROASTS[game.random.nextInt(BOSS_ROASTS.length)];
-        String banner = getModifierBanner(selected) + " | " + roast;
-        game.activateSillyModifier(selected, MODIFIER_DURATION_MS, banner);
+        game.activateSillyModifier(selected, MODIFIER_DURATION_MS, getModifierBanner(selected));
     }
 
     private String getModifierBanner(SpaceInvadersUI.SillyModifier modifier) {
@@ -219,11 +211,6 @@ public class GameCalculator extends Thread {
                         game.bullets.add(new Bullet(baseX + i * 14, baseY, i * 2));
                     }
                 }
-                case BOUNCING -> {
-                    Bullet b = new Bullet(baseX, baseY, 0);
-                    b.setBouncing(true);
-                    game.bullets.add(b);
-                }
                 case PIERCING -> {
                     Bullet pb = new Bullet(baseX, baseY, 0);
                     pb.setPiercing(true);
@@ -239,18 +226,21 @@ public class GameCalculator extends Thread {
     private void fireLaserBeam(int shooterX, int shooterWidth, int beamX, long now) {
         game.laserBeamX = beamX;
         game.laserBeamUntilMs = now + LASER_BEAM_FLASH_MS;
-        int beamLeft  = beamX - 12;
-        int beamRight = beamX + 12;
+        Rectangle beamRect = new Rectangle(
+                beamX - LASER_BEAM_HALF_WIDTH_PX,
+                0,
+                LASER_BEAM_HALF_WIDTH_PX * 2,
+                game.getHeight());
         Iterator<Invader> it = game.invaders.iterator();
         while (it.hasNext()) {
             Invader inv = it.next();
-            int cx = inv.getX() + inv.getSize() / 2;
-            if (cx >= beamLeft && cx <= beamRight) {
+            Rectangle invaderRect = new Rectangle(inv.getX(), inv.getY(), inv.getSize(), inv.getSize());
+            if (beamRect.intersects(invaderRect)) {
                 if (inv.isRickRollTarget()) game.handleRickRollKill();
                 addExplosionForInvader(inv);
                 it.remove();
                 game.recordInvaderDefeatCombo();
-                    game.healPlayerFromInvaderKill();
+                game.healPlayerFromInvaderKill();
                 int points = game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.TINY_PANIC ? 20 : 10;
                 game.addPoints(points);
             }
@@ -333,14 +323,7 @@ public class GameCalculator extends Thread {
 
                 // Apply horizontal velocity (spread shots)
                 if (bullet.getVx() != 0) {
-                    int newX = bullet.getX() + bullet.getVx();
-                    if (bullet.isBouncing()) {
-                        if (newX < 0 || newX > game.getWidth()) {
-                            bullet.setVx(-bullet.getVx());
-                            newX = bullet.getX() + bullet.getVx();
-                        }
-                    }
-                    bullet.setX(newX);
+                    bullet.setX(bullet.getX() + bullet.getVx());
                 }
 
                 bullet.setY(y - yStep);
@@ -448,8 +431,7 @@ public class GameCalculator extends Thread {
             SpaceInvadersUI.PowerUpType.TRIPLE_SHOT,
             SpaceInvadersUI.PowerUpType.PIERCING,
             SpaceInvadersUI.PowerUpType.SHOTGUN,
-            SpaceInvadersUI.PowerUpType.LASER_BEAM,
-            SpaceInvadersUI.PowerUpType.BOUNCING
+            SpaceInvadersUI.PowerUpType.LASER_BEAM
         };
         SpaceInvadersUI.PowerUpType type = types[game.random.nextInt(types.length)];
         int x = game.random.nextInt(Math.max(1, game.getWidth() - PowerUp.SIZE));

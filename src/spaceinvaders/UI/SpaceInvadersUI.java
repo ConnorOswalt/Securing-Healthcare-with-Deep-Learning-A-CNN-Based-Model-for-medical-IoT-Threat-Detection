@@ -42,8 +42,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         TRIPLE_SHOT,
         PIERCING,
         SHOTGUN,
-        LASER_BEAM,
-        BOUNCING
+        LASER_BEAM
     }
 
     private static SpaceInvadersUI activeInstance;
@@ -112,6 +111,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private String temporaryRickRestoreThemePath;
     private long temporaryRickRestoreAtMs = 0;
     private boolean temporaryRickRestoreToDefaultState = false;
+    private long rickMusicExpectedStopByMs = 0;
     private boolean pendingRandomRickSnippet = false;
     private boolean pendingResumeInterruptedTrackAfterRick = false;
 
@@ -421,6 +421,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
     public void clearTemporaryRickRestore() {
         clearRickRestoreSnapshot();
+        rickMusicExpectedStopByMs = 0;
         pendingRandomRickSnippet = false;
         pendingResumeInterruptedTrackAfterRick = false;
     }
@@ -440,11 +441,15 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             temporaryRickRestoreToDefaultState = true;
         }
         temporaryRickRestoreAtMs = restoreAtMs;
+        rickMusicExpectedStopByMs = restoreAtMs + 1500;
     }
 
     public void updateTemporaryRickThemeRestore() {
+        long now = System.currentTimeMillis();
+        runRickRollMusicFailsafe(now);
+
         if ((!temporaryRickRestoreToDefaultState && temporaryRickRestoreThemePath == null)
-                || System.currentTimeMillis() < temporaryRickRestoreAtMs) {
+                || now < temporaryRickRestoreAtMs) {
             return;
         }
 
@@ -473,6 +478,33 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         }
 
         ThemeImplementation.requestThemeChange(this, restoreThemePath);
+    }
+
+    private void runRickRollMusicFailsafe(long now) {
+        if (rickMusicExpectedStopByMs <= 0 || now < rickMusicExpectedStopByMs || musicHandler == null) {
+            return;
+        }
+
+        boolean rickTrackStillActive = false;
+        if (SpaceInvadersUI.class.getResource(RICK_ROLL_MUSIC_PATH) != null) {
+            rickTrackStillActive |= musicHandler.isTrackActive(RICK_ROLL_MUSIC_PATH);
+        }
+        if (SpaceInvadersUI.class.getResource(RICK_ROLL_MUSIC_FALLBACK_PATH) != null) {
+            rickTrackStillActive |= musicHandler.isTrackActive(RICK_ROLL_MUSIC_FALLBACK_PATH);
+        }
+
+        if (!rickTrackStillActive) {
+            rickMusicExpectedStopByMs = 0;
+            return;
+        }
+
+        // Extra guard: if Rick song is still active after expiry, force restore.
+        if (currentThemePath != null && !currentThemePath.isBlank() && !RICK_THEME_PATH.equals(currentThemePath)) {
+            ThemeImplementation.requestThemeChange(this, currentThemePath);
+        } else {
+            musicHandler.stopCurrentTrack();
+        }
+        rickMusicExpectedStopByMs = 0;
     }
 
     public boolean isSillinessModeEnabled() {
@@ -531,7 +563,6 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             case PIERCING    -> "PIERCING ROUNDS!";
             case SHOTGUN     -> "SHOTGUN BLAST!";
             case LASER_BEAM  -> "LASER BEAM!";
-            case BOUNCING    -> "BOUNCING BULLETS!";
             default          -> "";
         };
         if (!name.isEmpty()) setAnnouncerMessage(name, 2000);
