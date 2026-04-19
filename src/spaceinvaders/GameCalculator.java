@@ -78,12 +78,12 @@ public class GameCalculator extends Thread {
     }
 
     private void updateGameState() {
+        game.updateTemporaryRickThemeRestore();
+
         // Skip game updates if paused
         if (game.isPaused()) {
             return;
         }
-
-        game.updateTemporaryRickThemeRestore();
         updateSillyModeState();
 
         updateShooterPosition();
