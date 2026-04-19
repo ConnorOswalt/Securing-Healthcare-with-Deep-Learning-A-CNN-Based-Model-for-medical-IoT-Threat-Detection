@@ -15,6 +15,8 @@ public class ImageSelection {
     private Image rickInvaderImage;
     private Image bulletImage;
     private Image backgroundImage;
+    private Image deathSkinImage;
+    private boolean deathSkinFadeOut = true;
     private boolean starsBackgroundEnabled;
     private final StarsBackgroundPainter starsBackgroundPainter = new StarsBackgroundPainter();
 
@@ -39,6 +41,27 @@ public class ImageSelection {
 
     public Image getBackgroundImage() {
         return backgroundImage;
+    }
+
+    public Image getDeathSkinImage() {
+        return deathSkinImage;
+    }
+
+    public boolean isDeathSkinFadeOutEnabled() {
+        return deathSkinFadeOut;
+    }
+
+    public void setDeathSkinImageFromResourcePath(String resourcePath) {
+        deathSkinImage = loadImageIfPresent(resourcePath);
+    }
+
+    public void setDeathSkinFadeOut(boolean deathSkinFadeOut) {
+        this.deathSkinFadeOut = deathSkinFadeOut;
+    }
+
+    public void clearDeathSkinImage() {
+        deathSkinImage = null;
+        deathSkinFadeOut = true;
     }
 
     public boolean isStarsBackgroundEnabled() {

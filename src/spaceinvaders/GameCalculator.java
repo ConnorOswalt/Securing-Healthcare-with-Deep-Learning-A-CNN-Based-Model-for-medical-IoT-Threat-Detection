@@ -2,6 +2,7 @@ package spaceinvaders;
 
 import spaceinvaders.UI.SpaceInvadersUI;
 import spaceinvaders.characters.Bullet;
+import spaceinvaders.characters.DeathEffect;
 import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
 
@@ -66,6 +67,7 @@ public class GameCalculator extends Thread {
         updateBulletPositions();
         checkCollisions();
         updateExplosions();
+        updateDeathEffects();
         spawnNewInvaders();
     }
 
@@ -75,6 +77,17 @@ public class GameCalculator extends Thread {
             while (explosionIterator.hasNext()) {
                 if (explosionIterator.next().isExpired()) {
                     explosionIterator.remove();
+                }
+            }
+        }
+    }
+
+    private void updateDeathEffects() {
+        synchronized (game) {
+            Iterator<DeathEffect> it = game.deathEffects.iterator();
+            while (it.hasNext()) {
+                if (it.next().isExpired()) {
+                    it.remove();
                 }
             }
         }
@@ -202,14 +215,27 @@ public class GameCalculator extends Thread {
     }
 
     private void addExplosionForInvader(Invader invader) {
+        int centerX = invader.getX() + invader.getSize() / 2;
+        int centerY = invader.getY() + invader.getSize() / 2;
+
+        // If a death skin is set, show the flash/fade effect instead of the normal explosion
+        java.awt.Image deathSkin = game.imageSelection.getDeathSkinImage();
+        if (deathSkin != null) {
+            synchronized (game) {
+                game.deathEffects.add(new DeathEffect(invader.getX(), invader.getY(), invader.getSize(), deathSkin,
+                        game.imageSelection.isDeathSkinFadeOutEnabled()));
+            }
+            return;
+        }
+
         if (!game.isExplosionsEnabled()) {
             return;
         }
 
-        int centerX = invader.getX() + invader.getSize() / 2;
-        int centerY = invader.getY() + invader.getSize() / 2;
         int maxRadius = Math.max(12, invader.getSize());
-        game.explosions.add(new Explosion(centerX, centerY, maxRadius, EXPLOSION_DURATION_MS));
+        synchronized (game) {
+            game.explosions.add(new Explosion(centerX, centerY, maxRadius, EXPLOSION_DURATION_MS));
+        }
     }
 
     public void stopThread() {

@@ -4,5 +4,7 @@
   "invader": "/resources/Invader/Peter_Griffin.png",
   "bullet": "/resources/Bullet/bullet.gif",
   "background": "/resources/Background/peterWriting.gif",
-  "music": "/resources/Music/Peter_Griffin_Death_Note.wav"
+  "music": "/resources/Music/Peter_Griffin_Death_Note.wav",
+  "death_skin": "/resources/Invader/InvaderDeathSkins/peter_dead.png",
+  "death_skin_fade_out": true
 }

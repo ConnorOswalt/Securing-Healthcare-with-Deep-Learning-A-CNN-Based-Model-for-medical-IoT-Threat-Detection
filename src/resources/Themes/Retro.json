@@ -4,5 +4,7 @@
   "invader": "/resources/Invader/Retro.png",
   "bullet": "/resources/Bullet/retroProjectile.gif",
   "background": "/resources/Background/Retro.gif",
-  "music": "/resources/Music/Retro.wav"
+  "music": "/resources/Music/Retro.wav",
+  "death_skin": "/resources/Invader/InvaderDeathSkins/retro.gif",
+  "death_skin_fade_out": false
 }

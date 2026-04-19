@@ -1,10 +1,12 @@
 package spaceinvaders.UI;
 
 import spaceinvaders.characters.Bullet;
+import spaceinvaders.characters.DeathEffect;
 import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
 
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -148,5 +150,36 @@ public class PaintingActions {
         FontMetrics fm = g.getFontMetrics();
         int textWidth = fm.stringWidth(scoreText);
         g.drawString(scoreText, game.getWidth() - textWidth - 10, 20);
+    }
+
+    public void drawDeathEffects(Graphics g, SpaceInvadersUI game) {
+        List<DeathEffect> copy;
+        synchronized (game) {
+            copy = new ArrayList<>(game.deathEffects);
+        }
+
+        Graphics2D g2d = (Graphics2D) g;
+        Composite originalComposite = g2d.getComposite();
+
+        for (DeathEffect effect : copy) {
+            int alpha = effect.getAlpha();
+            if (alpha <= 0) {
+                continue;
+            }
+
+            BufferedImage frame = captureDeathEffectFrame(effect, game);
+            g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha / 255.0f));
+            g2d.drawImage(frame, effect.getX(), effect.getY(), game);
+        }
+
+        g2d.setComposite(originalComposite);
+    }
+
+    private BufferedImage captureDeathEffectFrame(DeathEffect effect, SpaceInvadersUI game) {
+        BufferedImage frame = new BufferedImage(effect.getSize(), effect.getSize(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D frameGraphics = frame.createGraphics();
+        frameGraphics.drawImage(effect.getDeathSkinImage(), 0, 0, effect.getSize(), effect.getSize(), game);
+        frameGraphics.dispose();
+        return frame;
     }
 }

@@ -16,6 +16,8 @@ import javax.swing.SwingUtilities;
 public class ThemeImplementation {
     private static final Pattern STRING_FIELD_PATTERN_TEMPLATE =
             Pattern.compile("\"%s\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern BOOLEAN_FIELD_PATTERN_TEMPLATE =
+        Pattern.compile("\"%s\"\\s*:\\s*(true|false)", Pattern.CASE_INSENSITIVE);
     private static final Object THEME_LOCK = new Object();
     private static SpaceInvadersUI pendingGame;
     private static String pendingThemePath;
@@ -126,6 +128,16 @@ public class ThemeImplementation {
         applyImagePath(game, jsonContent, "bullet", game.imageSelection::setBulletImageFromResourcePath);
         applyImagePath(game, jsonContent, "background", game.imageSelection::setBackgroundImageFromResourcePath);
 
+        // death_skin is optional — clear it if not present in this theme
+        String deathSkinPath = extractPath(jsonContent, "death_skin");
+        if (deathSkinPath != null) {
+            game.imageSelection.setDeathSkinImageFromResourcePath(deathSkinPath);
+            Boolean deathSkinFadeOut = extractBoolean(jsonContent, "death_skin_fade_out");
+            game.imageSelection.setDeathSkinFadeOut(deathSkinFadeOut == null || deathSkinFadeOut);
+        } else {
+            game.imageSelection.clearDeathSkinImage();
+        }
+
         String musicPath = extractPath(jsonContent, "music");
         if (musicPath != null && game.getMusicHandler() != null) {
             if (game.isGameOver()) {
@@ -160,6 +172,18 @@ public class ThemeImplementation {
             return null;
         }
         return normalized;
+    }
+
+    private static Boolean extractBoolean(String jsonContent, String key) {
+        String quotedKey = Pattern.quote(key);
+        Pattern pattern = Pattern.compile(String.format(BOOLEAN_FIELD_PATTERN_TEMPLATE.pattern(), quotedKey),
+                Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(jsonContent);
+        if (!matcher.find()) {
+            return null;
+        }
+
+        return Boolean.parseBoolean(matcher.group(1));
     }
 
     private static String readResourceFile(String resourcePath) {

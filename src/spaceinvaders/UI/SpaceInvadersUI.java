@@ -8,6 +8,7 @@ import spaceinvaders.scores.ScoreManager;
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
+import spaceinvaders.characters.DeathEffect;
 import spaceinvaders.UI.JMenus.ShooterMenu;
 import spaceinvaders.UI.JMenus.InvaderMenu;
 import spaceinvaders.UI.JMenus.BulletMenu;
@@ -35,6 +36,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public ArrayList<Invader> invaders;
     public ArrayList<Bullet> bullets;
     public ArrayList<Explosion> explosions;
+    public ArrayList<DeathEffect> deathEffects;
     public Random random;
     public boolean moveLeft, moveRight;
     public boolean fireHeld;
@@ -69,6 +71,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         invaders = new ArrayList<>(); // Need to describe what ArrayList<> is.
         bullets = new ArrayList<>();
         explosions = new ArrayList<>();
+        deathEffects = new ArrayList<>();
         random = new Random();
         moveLeft = false;
         moveRight = false;
@@ -160,6 +163,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         // Draw invader explosion effects
         paintingActions.drawExplosions(g, this);
+
+        // Draw invader death-skin flash/fade effects
+        paintingActions.drawDeathEffects(g, this);
 
         // Draw bullets (bullets)
         paintingActions.drawBullets(g, this);
@@ -392,6 +398,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             invaders.clear();
             bullets.clear();
             explosions.clear();
+            deathEffects.clear();
             gameOver = false;
             deathSoundPlayed = false;
             gameOverFlashStartTime = 0; // Reset game over flash timer
