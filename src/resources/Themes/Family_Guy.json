@@ -6,9 +6,10 @@
   "background": "/resources/Background/peterWriting.gif",
   "music": "/resources/Music/Peter_Griffin_Death_Note.wav",
   "deathscreen": "/resources/Background/deathscreens/family-guy.gif",
-  "deathsound": "/resources/SoundEffects/player_death.wav",
+  "deathsound": "/resources/sfx/PeterFalls.wav",
   "death_explosion": "/resources/SoundEffects/player_death.wav",
   "deathsound_enabled": true,
+  "deathsound_loop": true,
   "death_skin": "/resources/Invader/InvaderDeathSkins/peter_dead.png",
   "death_skin_fade_out": true
 }

@@ -171,6 +171,9 @@ public class ThemeImplementation {
         Boolean deathSoundEnabled = extractBoolean(jsonContent, "deathsound_enabled");
         game.setDeathSoundEnabled(deathSoundEnabled == null || deathSoundEnabled);
 
+        Boolean deathSoundLooping = extractBoolean(jsonContent, "deathsound_loop");
+        game.setDeathSoundLooping(deathSoundLooping != null && deathSoundLooping);
+
         String musicPath = extractPath(jsonContent, "music");
         if (musicPath != null && game.getMusicHandler() != null) {
             if (game.isGameOver()) {

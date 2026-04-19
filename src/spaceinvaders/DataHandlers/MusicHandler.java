@@ -6,10 +6,13 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.FloatControl;
+import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineUnavailableException;
 import javax.sound.sampled.UnsupportedAudioFileException;
 
@@ -20,8 +23,15 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  */
 public class MusicHandler extends Thread {
     private volatile boolean running = true;
+    private final ExecutorService effectExecutor = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "SoundEffect-Thread");
+        t.setDaemon(true);
+        return t;
+    });
     private String pendingTrackResourcePath;
     private boolean hasPendingTrack = false;
+    private volatile Clip loopingEffectClip;
+    private volatile boolean loopingEffectStopped = false;
     private boolean pendingRandomStart = false;
     private long pendingMinimumRemainingMs = 0;
     private boolean pendingExplicitStartPosition = false;
@@ -136,6 +146,7 @@ public class MusicHandler extends Thread {
 
     public synchronized void stopThread() {
         running = false;
+        effectExecutor.shutdownNow();
         notifyAll();
     }
 
@@ -157,9 +168,36 @@ public class MusicHandler extends Thread {
     }
 
     public void playOneShotEffect(String resourcePath) {
-        Thread effectThread = new Thread(() -> playEffectNow(resourcePath), "SoundEffect-Thread");
+        effectExecutor.submit(() -> playEffectNow(resourcePath));
+    }
+
+    public void playLoopingEffect(String resourcePath) {
+        stopLoopingEffect();
+        Thread effectThread = new Thread(() -> startLoopingEffectNow(resourcePath), "LoopingEffect-Thread");
         effectThread.setDaemon(true);
         effectThread.start();
+    }
+
+    public void playLoopingEffectSyncedTo(String resourcePath, long periodMs) {
+        stopLoopingEffect();
+        if (periodMs <= 0) {
+            playLoopingEffect(resourcePath);
+            return;
+        }
+        loopingEffectStopped = false;
+        Thread t = new Thread(() -> syncedLoopNow(resourcePath, periodMs), "SyncedLoopEffect-Thread");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    public void stopLoopingEffect() {
+        loopingEffectStopped = true;
+        Clip c = loopingEffectClip;
+        if (c != null) {
+            c.stop();
+            c.close();
+            loopingEffectClip = null;
+        }
     }
 
     public synchronized void setMuted(boolean muted) {
@@ -321,6 +359,56 @@ public class MusicHandler extends Thread {
         }
     }
 
+    private void startLoopingEffectNow(String resourcePath) {
+        loopingEffectStopped = false;
+        URL effectUrl = MusicHandler.class.getResource(resourcePath);
+        if (effectUrl == null) {
+            GameExceptions.showErrorDialog("Looping sound effect not found: " + resourcePath);
+            return;
+        }
+        try {
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(effectUrl);
+            Clip effectClip = AudioSystem.getClip();
+            effectClip.open(audioStream);
+            loopingEffectClip = effectClip;
+            effectClip.loop(Clip.LOOP_CONTINUOUSLY);
+        } catch (UnsupportedAudioFileException | LineUnavailableException | IOException e) {
+            GameExceptions.handleWithDialog("Failed to start looping sound effect", e);
+        }
+    }
+
+    private void syncedLoopNow(String resourcePath, long periodMs) {
+        URL effectUrl = MusicHandler.class.getResource(resourcePath);
+        if (effectUrl == null) {
+            GameExceptions.showErrorDialog("Looping sound effect not found: " + resourcePath);
+            return;
+        }
+        while (!loopingEffectStopped) {
+            try {
+                AudioInputStream audioStream = AudioSystem.getAudioInputStream(effectUrl);
+                Clip effectClip = AudioSystem.getClip();
+                effectClip.open(audioStream);
+                loopingEffectClip = effectClip;
+                effectClip.start();
+                long cycleStart = System.currentTimeMillis();
+                while (!loopingEffectStopped) {
+                    long remaining = periodMs - (System.currentTimeMillis() - cycleStart);
+                    if (remaining <= 0) break;
+                    Thread.sleep(Math.min(50L, remaining));
+                }
+                effectClip.stop();
+                effectClip.close();
+                loopingEffectClip = null;
+            } catch (InterruptedException e) {
+                GameExceptions.handleInterrupted("Synced looping effect", e);
+                break;
+            } catch (UnsupportedAudioFileException | LineUnavailableException | IOException e) {
+                GameExceptions.handleWithDialog("Failed to play synced looping effect", e);
+                break;
+            }
+        }
+    }
+
     private void playEffectNow(String resourcePath) {
         URL effectUrl = MusicHandler.class.getResource(resourcePath);
         if (effectUrl == null) {
@@ -328,19 +416,17 @@ public class MusicHandler extends Thread {
             return;
         }
 
-        try (AudioInputStream audioStream = AudioSystem.getAudioInputStream(effectUrl)) {
+        try {
+            AudioInputStream audioStream = AudioSystem.getAudioInputStream(effectUrl);
             Clip effectClip = AudioSystem.getClip();
             effectClip.open(audioStream);
+            effectClip.addLineListener(event -> {
+                if (event.getType() == LineEvent.Type.STOP) {
+                    effectClip.close();
+                }
+            });
             effectClip.start();
-
-            long effectDurationMs = Math.max(100L, effectClip.getMicrosecondLength() / 1000L);
-            try {
-                Thread.sleep(effectDurationMs);
-            } catch (InterruptedException e) {
-                GameExceptions.handleInterrupted("Sound effect playback", e);
-            }
-
-            effectClip.close();
+            // Thread returns to pool immediately; LineListener closes clip when playback ends
         } catch (UnsupportedAudioFileException | LineUnavailableException | IOException e) {
             GameExceptions.handleWithDialog("Failed to play sound effect", e);
         }

@@ -3,10 +3,18 @@ package spaceinvaders.UI;
 import spaceinvaders.GameExceptions;
 
 import java.awt.*;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.stream.ImageInputStream;
 import javax.swing.ImageIcon;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
 
 public class ImageSelection {
     private static final String RICK_INVADER_IMAGE_PATH = "/resources/Shooter/Rick.png";
@@ -17,6 +25,7 @@ public class ImageSelection {
     private Image backgroundImage;
     private Image deathSkinImage;
     private Image deathScreenImage;
+    private long deathScreenGifDurationMs = 0;
     private boolean deathSkinFadeOut = true;
     private boolean starsBackgroundEnabled;
     private final StarsBackgroundPainter starsBackgroundPainter = new StarsBackgroundPainter();
@@ -52,6 +61,10 @@ public class ImageSelection {
         return deathScreenImage;
     }
 
+    public long getDeathScreenGifDurationMs() {
+        return deathScreenGifDurationMs;
+    }
+
     public boolean isDeathSkinFadeOutEnabled() {
         return deathSkinFadeOut;
     }
@@ -74,10 +87,47 @@ public class ImageSelection {
         if (loadedImage != null) {
             deathScreenImage = loadedImage;
         }
+        URL url = ImageSelection.class.getResource(resourcePath);
+        if (url != null && resourcePath.toLowerCase().endsWith(".gif")) {
+            deathScreenGifDurationMs = computeGifDurationMs(url);
+        } else {
+            deathScreenGifDurationMs = 0;
+        }
     }
 
     public void clearDeathScreenImage() {
         deathScreenImage = null;
+        deathScreenGifDurationMs = 0;
+    }
+
+    private static long computeGifDurationMs(URL url) {
+        try (ImageInputStream iis = ImageIO.createImageInputStream(url.openStream())) {
+            Iterator<ImageReader> readers = ImageIO.getImageReadersByFormatName("gif");
+            if (!readers.hasNext()) return 0;
+            ImageReader reader = readers.next();
+            reader.setInput(iis);
+            int numFrames = reader.getNumImages(true);
+            long totalMs = 0;
+            for (int i = 0; i < numFrames; i++) {
+                IIOMetadata meta = reader.getImageMetadata(i);
+                Node root = meta.getAsTree("javax_imageio_gif_image_1.0");
+                Node child = root.getFirstChild();
+                while (child != null) {
+                    if ("GraphicControlExtension".equals(child.getNodeName())) {
+                        NamedNodeMap attrs = child.getAttributes();
+                        Node delayNode = attrs.getNamedItem("delayTime");
+                        if (delayNode != null) {
+                            totalMs += Long.parseLong(delayNode.getNodeValue()) * 10L;
+                        }
+                    }
+                    child = child.getNextSibling();
+                }
+            }
+            reader.dispose();
+            return totalMs;
+        } catch (IOException | RuntimeException e) {
+            return 0;
+        }
     }
 
     public boolean isStarsBackgroundEnabled() {

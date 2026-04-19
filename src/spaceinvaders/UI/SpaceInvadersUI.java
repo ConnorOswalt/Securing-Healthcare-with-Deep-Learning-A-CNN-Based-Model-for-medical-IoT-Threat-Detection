@@ -71,6 +71,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private boolean gameOver = false;
     private boolean deathSoundPlayed = false;
     private boolean deathSoundEnabled = true;
+    private boolean deathSoundLooping = false;
     private String deathSoundEffectPath = DEATH_SOUND_EFFECT_PATH;
     private String deathExplosionSoundEffectPath;
     private long gameOverFlashStartTime = 0;
@@ -350,6 +351,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             imageSelection.restoreDefaultThemeState(this);
             currentThemePath = null;
             setDeathSoundEnabled(true);
+            setDeathSoundLooping(false);
             setDeathSoundEffectPath(DEATH_SOUND_EFFECT_PATH);
             clearDeathExplosionSoundEffectPath();
             if (musicHandler != null) {
@@ -446,6 +448,10 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
     public void setDeathSoundEnabled(boolean deathSoundEnabled) {
         this.deathSoundEnabled = deathSoundEnabled;
+    }
+
+    public void setDeathSoundLooping(boolean deathSoundLooping) {
+        this.deathSoundLooping = deathSoundLooping;
     }
 
     public String getDefaultDeathSoundEffectPath() {
@@ -557,7 +563,16 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             if (musicHandler != null) {
                 musicHandler.stopCurrentTrack();
                 if (!deathSoundPlayed && deathSoundEnabled) {
-                    musicHandler.playOneShotEffect(deathSoundEffectPath);
+                    if (deathSoundLooping) {
+                        long gifDurationMs = imageSelection.getDeathScreenGifDurationMs();
+                        if (gifDurationMs > 0) {
+                            musicHandler.playLoopingEffectSyncedTo(deathSoundEffectPath, gifDurationMs);
+                        } else {
+                            musicHandler.playLoopingEffect(deathSoundEffectPath);
+                        }
+                    } else {
+                        musicHandler.playOneShotEffect(deathSoundEffectPath);
+                    }
                     deathSoundPlayed = true;
                 }
             }
@@ -656,6 +671,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             gameOver = false;
             deathSoundPlayed = false;
             gameOverFlashStartTime = 0; // Reset game over flash timer
+            if (musicHandler != null) {
+                musicHandler.stopLoopingEffect();
+            }
             playerHealth = 3;
             playerFlashing = false;
             shooter_X_Coordinate = 200;
