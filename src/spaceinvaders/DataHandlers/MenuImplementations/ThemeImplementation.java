@@ -11,10 +11,24 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.SwingUtilities;
 
 public class ThemeImplementation {
     private static final Pattern STRING_FIELD_PATTERN_TEMPLATE =
             Pattern.compile("\"%s\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Object THEME_LOCK = new Object();
+    private static SpaceInvadersUI pendingGame;
+    private static String pendingThemePath;
+    private static boolean hasPendingTheme;
+
+    static {
+        Thread themeThread = new Thread(ThemeImplementation::processThemeChanges, "ThemeHandler-Thread");
+        themeThread.setDaemon(true);
+        themeThread.start();
+    }
+
+    public ThemeImplementation() {
+    }
 
     public void handleThemeSelection(ActionEvent e) {
         if (!(e.getSource() instanceof JMenuItem)) {
@@ -46,10 +60,47 @@ public class ThemeImplementation {
             return;
         }
 
-        applyThemeFromJson(game, selectedPath);
+        queueThemeChange(game, selectedPath);
     }
 
-    private void applyThemeFromJson(SpaceInvadersUI game, String jsonResourcePath) {
+    private void queueThemeChange(SpaceInvadersUI game, String selectedPath) {
+        synchronized (THEME_LOCK) {
+            pendingGame = game;
+            pendingThemePath = selectedPath;
+            hasPendingTheme = true;
+            THEME_LOCK.notifyAll();
+        }
+    }
+
+    private static void processThemeChanges() {
+        while (true) {
+            SpaceInvadersUI game;
+            String themePath;
+
+            synchronized (THEME_LOCK) {
+                while (!hasPendingTheme) {
+                    try {
+                        THEME_LOCK.wait();
+                    } catch (InterruptedException e) {
+                        GameExceptions.handleInterrupted("Theme handler", e);
+                        return;
+                    }
+                }
+
+                game = pendingGame;
+                themePath = pendingThemePath;
+                hasPendingTheme = false;
+            }
+
+            try {
+                applyThemeFromJson(game, themePath);
+            } catch (RuntimeException e) {
+                GameExceptions.handleWithDialog("Failed to apply theme", e);
+            }
+        }
+    }
+
+    private static void applyThemeFromJson(SpaceInvadersUI game, String jsonResourcePath) {
         String jsonContent = readResourceFile(jsonResourcePath);
         if (jsonContent == null) {
             GameExceptions.showErrorDialog("Unable to read theme JSON: " + jsonResourcePath);
@@ -66,10 +117,10 @@ public class ThemeImplementation {
             game.getMusicHandler().selectTrack(musicPath);
         }
 
-        game.repaint();
+        SwingUtilities.invokeLater(game::repaint);
     }
 
-    private void applyImagePath(SpaceInvadersUI game, String jsonContent, String key, ResourceApplier applier) {
+    private static void applyImagePath(SpaceInvadersUI game, String jsonContent, String key, ResourceApplier applier) {
         String resourcePath = extractPath(jsonContent, key);
         if (resourcePath == null) {
             return;
@@ -77,7 +128,7 @@ public class ThemeImplementation {
         applier.apply(resourcePath);
     }
 
-    private String extractPath(String jsonContent, String key) {
+    private static String extractPath(String jsonContent, String key) {
         String quotedKey = Pattern.quote(key);
         Pattern pattern = Pattern.compile(String.format(STRING_FIELD_PATTERN_TEMPLATE.pattern(), quotedKey));
         Matcher matcher = pattern.matcher(jsonContent);
@@ -93,7 +144,7 @@ public class ThemeImplementation {
         return normalized;
     }
 
-    private String readResourceFile(String resourcePath) {
+    private static String readResourceFile(String resourcePath) {
         try (InputStream input = ThemeImplementation.class.getResourceAsStream(resourcePath)) {
             if (input == null) {
                 return null;
@@ -105,7 +156,7 @@ public class ThemeImplementation {
         }
     }
 
-    private String normalizeResourcePath(String path) {
+    private static String normalizeResourcePath(String path) {
         String normalized = path.trim().replace('\\', '/');
         if (normalized.startsWith("src/")) {
             normalized = normalized.substring(3);
