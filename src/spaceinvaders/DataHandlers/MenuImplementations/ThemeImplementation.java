@@ -129,10 +129,25 @@ public class ThemeImplementation {
 
         game.setCurrentThemePath(jsonResourcePath);
 
+        Boolean restoreDefaults = extractBoolean(jsonContent, "restore_defaults");
+        if (Boolean.TRUE.equals(restoreDefaults)) {
+            game.imageSelection.restoreDefaultThemeState(game);
+            game.setDeathSoundEffectPath(game.getDefaultDeathSoundEffectPath());
+            game.clearDeathExplosionSoundEffectPath();
+            game.setDeathSoundEnabled(true);
+            game.setDeathSoundLooping(false);
+        }
+
         applyImagePath(game, jsonContent, "shooter", game.imageSelection::setShooterImageFromResourcePath);
         applyImagePath(game, jsonContent, "invader", game.imageSelection::setInvaderImageFromResourcePath);
         applyImagePath(game, jsonContent, "bullet", game.imageSelection::setBulletImageFromResourcePath);
-        applyImagePath(game, jsonContent, "background", game.imageSelection::setBackgroundImageFromResourcePath);
+
+        Boolean starsBackground = extractBoolean(jsonContent, "stars_background");
+        if (Boolean.TRUE.equals(starsBackground)) {
+            game.imageSelection.enableStarsBackground(game);
+        } else {
+            applyImagePath(game, jsonContent, "background", game.imageSelection::setBackgroundImageFromResourcePath);
+        }
 
         String backgroundPath = extractPath(jsonContent, "background");
         String deathScreenPath = extractPath(jsonContent, "deathscreen");
@@ -174,19 +189,25 @@ public class ThemeImplementation {
         Boolean deathSoundLooping = extractBoolean(jsonContent, "deathsound_loop");
         game.setDeathSoundLooping(deathSoundLooping != null && deathSoundLooping);
 
+        Boolean musicEnabled = extractBoolean(jsonContent, "music_enabled");
         String musicPath = extractPath(jsonContent, "music");
-        if (musicPath != null && game.getMusicHandler() != null) {
-            if (game.isGameOver()) {
-                game.getMusicHandler().queueTrackWithoutPlaying(musicPath);
-            } else if (game.consumePendingRandomRickSnippet()) {
-                game.getMusicHandler().startTemporaryOverrideFromRandomPosition(musicPath,
-                        game.getMinimumRickSnippetRemainingMs());
-            } else if (game.consumePendingResumeInterruptedTrackAfterRick()) {
-                if (!game.getMusicHandler().resumeInterruptedTrack()) {
+        if (game.getMusicHandler() != null) {
+            if (Boolean.FALSE.equals(musicEnabled)) {
+                game.getMusicHandler().clearInterruptedTrack();
+                game.getMusicHandler().stopCurrentTrack();
+            } else if (musicPath != null) {
+                if (game.isGameOver()) {
+                    game.getMusicHandler().queueTrackWithoutPlaying(musicPath);
+                } else if (game.consumePendingRandomRickSnippet()) {
+                    game.getMusicHandler().startTemporaryOverrideFromRandomPosition(musicPath,
+                            game.getMinimumRickSnippetRemainingMs());
+                } else if (game.consumePendingResumeInterruptedTrackAfterRick()) {
+                    if (!game.getMusicHandler().resumeInterruptedTrack()) {
+                        game.getMusicHandler().selectTrack(musicPath);
+                    }
+                } else {
                     game.getMusicHandler().selectTrack(musicPath);
                 }
-            } else {
-                game.getMusicHandler().selectTrack(musicPath);
             }
         }
 

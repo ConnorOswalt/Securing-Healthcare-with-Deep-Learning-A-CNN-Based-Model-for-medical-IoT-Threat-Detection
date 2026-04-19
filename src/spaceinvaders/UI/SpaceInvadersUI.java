@@ -420,9 +420,26 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     }
 
     public void clearTemporaryRickRestore() {
+        clearRickRestoreSnapshot();
+        pendingRandomRickSnippet = false;
+        pendingResumeInterruptedTrackAfterRick = false;
+    }
+
+    private void clearRickRestoreSnapshot() {
         temporaryRickRestoreThemePath = null;
         temporaryRickRestoreAtMs = 0;
         temporaryRickRestoreToDefaultState = false;
+    }
+
+    private void saveCurrentThemeBeforeRickRoll(long restoreAtMs) {
+        if (currentThemePath != null && !currentThemePath.isBlank()) {
+            temporaryRickRestoreThemePath = currentThemePath;
+            temporaryRickRestoreToDefaultState = false;
+        } else {
+            temporaryRickRestoreThemePath = null;
+            temporaryRickRestoreToDefaultState = true;
+        }
+        temporaryRickRestoreAtMs = restoreAtMs;
     }
 
     public void updateTemporaryRickThemeRestore() {
@@ -433,8 +450,11 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         boolean restoreDefaultState = temporaryRickRestoreToDefaultState;
         String restoreThemePath = temporaryRickRestoreThemePath;
-        clearTemporaryRickRestore();
+        boolean shouldResumeInterruptedTrack = pendingResumeInterruptedTrackAfterRick;
+        clearRickRestoreSnapshot();
+        pendingRandomRickSnippet = false;
         if (restoreDefaultState) {
+            pendingResumeInterruptedTrackAfterRick = false;
             imageSelection.restoreDefaultThemeState(this);
             currentThemePath = null;
             setDeathSoundEnabled(true);
@@ -442,7 +462,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             setDeathSoundEffectPath(DEATH_SOUND_EFFECT_PATH);
             clearDeathExplosionSoundEffectPath();
             if (musicHandler != null) {
-                if (!musicHandler.resumeInterruptedTrack()) {
+                if (shouldResumeInterruptedTrack && !musicHandler.resumeInterruptedTrack()) {
+                    musicHandler.stopCurrentTrack();
+                } else if (!shouldResumeInterruptedTrack) {
                     musicHandler.stopCurrentTrack();
                 }
             }
@@ -598,14 +620,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         if (SpaceInvadersUI.class.getResource(RICK_THEME_PATH) != null) {
             long randomRickDurationMs = MIN_TEMPORARY_RICK_THEME_DURATION_MS
                     + random.nextInt((int) TEMPORARY_RICK_THEME_DURATION_RANGE_MS + 1);
-            if (currentThemePath != null && !currentThemePath.isBlank()) {
-                temporaryRickRestoreThemePath = currentThemePath;
-                temporaryRickRestoreAtMs = System.currentTimeMillis() + randomRickDurationMs;
-            } else {
-                temporaryRickRestoreThemePath = null;
-                temporaryRickRestoreToDefaultState = true;
-                temporaryRickRestoreAtMs = System.currentTimeMillis() + randomRickDurationMs;
-            }
+            saveCurrentThemeBeforeRickRoll(System.currentTimeMillis() + randomRickDurationMs);
             pendingRandomRickSnippet = true;
             pendingResumeInterruptedTrackAfterRick = true;
             ThemeImplementation.requestThemeChange(this, RICK_THEME_PATH);
