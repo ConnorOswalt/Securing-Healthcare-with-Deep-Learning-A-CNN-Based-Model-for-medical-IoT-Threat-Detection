@@ -55,6 +55,11 @@ public class GameCalculator extends Thread {
     }
 
     private void updateGameState() {
+        // Skip game updates if paused
+        if (game.isPaused()) {
+            return;
+        }
+        
         updateShooterPosition();
         handleShooting();
         updateInvaderPositions();

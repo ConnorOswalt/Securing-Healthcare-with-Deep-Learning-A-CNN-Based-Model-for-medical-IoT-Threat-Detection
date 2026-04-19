@@ -62,6 +62,10 @@ public class ListenerActions {
                 game.restartGame();
             });
         }
+        if (key == KeyEvent.VK_P && !game.isGameOver()) {
+            // Toggle pause
+            game.setPaused(!game.isPaused());
+        }
     }
 
     public void keyReleased(KeyEvent e, SpaceInvadersUI game) {

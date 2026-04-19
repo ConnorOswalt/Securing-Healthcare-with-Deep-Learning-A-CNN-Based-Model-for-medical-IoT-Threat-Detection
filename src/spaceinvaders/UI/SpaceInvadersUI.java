@@ -57,6 +57,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private boolean deathSoundPlayed = false;
     private long gameOverFlashStartTime = 0;
     private static final long GAME_OVER_FLASH_DURATION = 500; // Flash for 500ms after game over
+    private boolean paused = false;
 
     // Constructor
     public SpaceInvadersUI() {
@@ -109,6 +110,14 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public static SpaceInvadersUI getActiveInstance() {
         return activeInstance;
     }
+    
+    public boolean isPaused() {
+        return paused;
+    }
+    
+    public void setPaused(boolean paused) {
+        this.paused = paused;
+    }
 
     @Override
     public void keyPressed(KeyEvent e) {
@@ -135,6 +144,11 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         if (gameOver) {
             drawGameOver(g);
+            return;
+        }
+        
+        if (paused) {
+            drawPauseScreen(g);
             return;
         }
 
@@ -295,6 +309,21 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             // DON'T stop the repaintTimer - we need it to display the game over screen
             repaint();
         }
+    }
+
+    private void drawPauseScreen(Graphics g) {
+        // Draw semi-transparent overlay to darken background
+        g.setColor(new Color(0, 0, 0, 120));
+        g.fillRect(0, 0, getWidth(), getHeight());
+        
+        // Draw pause text in bright green (smaller font)
+        g.setColor(new Color(0, 255, 0)); // Bright green
+        g.setFont(new Font("Arial", Font.BOLD, 32));
+        FontMetrics fm = g.getFontMetrics();
+        String pauseText = "Paused Press P to resume";
+        int textWidth = fm.stringWidth(pauseText);
+        int textHeight = fm.getAscent();
+        g.drawString(pauseText, (getWidth() - textWidth) / 2, (getHeight() + textHeight) / 2);
     }
 
     private void drawGameOver(Graphics g) {
