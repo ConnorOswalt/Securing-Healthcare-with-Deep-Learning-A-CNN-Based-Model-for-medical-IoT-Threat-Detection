@@ -1,6 +1,9 @@
 package spaceinvaders.characters;
 
+import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 
 /**
  * Represents a death-skin effect played at the location of a killed invader.
@@ -13,6 +16,7 @@ public class DeathEffect {
     private final Image deathSkinImage;
     private final boolean fadeOut;
     private final long createdAtMs;
+    private BufferedImage cachedFrame;
 
     public DeathEffect(int x, int y, int size, Image deathSkinImage, boolean fadeOut) {
         this.x = x;
@@ -27,6 +31,20 @@ public class DeathEffect {
     public int getY() { return y; }
     public int getSize() { return size; }
     public Image getDeathSkinImage() { return deathSkinImage; }
+
+    /**
+     * Returns a cached BufferedImage of this death skin at its size.
+     * The image is the same for every frame, so it is rendered once and reused.
+     */
+    public BufferedImage getCachedFrame(ImageObserver observer) {
+        if (cachedFrame == null) {
+            cachedFrame = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+            Graphics2D g = cachedFrame.createGraphics();
+            g.drawImage(deathSkinImage, 0, 0, size, size, observer);
+            g.dispose();
+        }
+        return cachedFrame;
+    }
 
     public double getProgress() {
         long elapsed = System.currentTimeMillis() - createdAtMs;

@@ -167,19 +167,11 @@ public class PaintingActions {
                 continue;
             }
 
-            BufferedImage frame = captureDeathEffectFrame(effect, game);
+            BufferedImage frame = effect.getCachedFrame(game);
             g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha / 255.0f));
             g2d.drawImage(frame, effect.getX(), effect.getY(), game);
         }
 
         g2d.setComposite(originalComposite);
-    }
-
-    private BufferedImage captureDeathEffectFrame(DeathEffect effect, SpaceInvadersUI game) {
-        BufferedImage frame = new BufferedImage(effect.getSize(), effect.getSize(), BufferedImage.TYPE_INT_ARGB);
-        Graphics2D frameGraphics = frame.createGraphics();
-        frameGraphics.drawImage(effect.getDeathSkinImage(), 0, 0, effect.getSize(), effect.getSize(), game);
-        frameGraphics.dispose();
-        return frame;
     }
 }
