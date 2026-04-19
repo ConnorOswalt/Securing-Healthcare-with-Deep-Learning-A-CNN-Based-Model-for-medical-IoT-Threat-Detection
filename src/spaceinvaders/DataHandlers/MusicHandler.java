@@ -22,7 +22,12 @@ public class MusicHandler extends Thread {
     private boolean hasPendingTrack = false;
     private boolean pendingRandomStart = false;
     private long pendingMinimumRemainingMs = 0;
+    private boolean pendingExplicitStartPosition = false;
+    private long pendingStartPositionUs = 0;
     private Clip clip;
+    private String currentTrackResourcePath;
+    private String interruptedTrackResourcePath;
+    private long interruptedTrackPositionUs = 0;
     private boolean muted = false;
     private int volumePercent = 80;
 
@@ -37,6 +42,8 @@ public class MusicHandler extends Thread {
             String trackPath;
             boolean randomStart;
             long minimumRemainingMs;
+            boolean explicitStartPosition;
+            long startPositionUs;
             synchronized (this) {
                 while (running && !hasPendingTrack) {
                     try {
@@ -55,12 +62,16 @@ public class MusicHandler extends Thread {
                 trackPath = pendingTrackResourcePath;
                 randomStart = pendingRandomStart;
                 minimumRemainingMs = pendingMinimumRemainingMs;
+                explicitStartPosition = pendingExplicitStartPosition;
+                startPositionUs = pendingStartPositionUs;
                 hasPendingTrack = false;
                 pendingRandomStart = false;
                 pendingMinimumRemainingMs = 0;
+                pendingExplicitStartPosition = false;
+                pendingStartPositionUs = 0;
             }
 
-            playTrack(trackPath, randomStart, minimumRemainingMs);
+            playTrack(trackPath, randomStart, minimumRemainingMs, explicitStartPosition, startPositionUs);
         }
 
         closeClip();
@@ -70,6 +81,8 @@ public class MusicHandler extends Thread {
         pendingTrackResourcePath = resourcePath;
         pendingRandomStart = false;
         pendingMinimumRemainingMs = 0;
+        pendingExplicitStartPosition = false;
+        pendingStartPositionUs = 0;
         hasPendingTrack = true;
         notifyAll();
     }
@@ -78,8 +91,36 @@ public class MusicHandler extends Thread {
         pendingTrackResourcePath = resourcePath;
         pendingRandomStart = true;
         pendingMinimumRemainingMs = Math.max(0, minimumRemainingMs);
+        pendingExplicitStartPosition = false;
+        pendingStartPositionUs = 0;
         hasPendingTrack = true;
         notifyAll();
+    }
+
+    public synchronized void startTemporaryOverrideFromRandomPosition(String resourcePath, long minimumRemainingMs) {
+        saveInterruptedTrackState();
+        selectTrackFromRandomPosition(resourcePath, minimumRemainingMs);
+    }
+
+    public synchronized void resumeInterruptedTrack() {
+        if (interruptedTrackResourcePath == null || interruptedTrackResourcePath.isBlank()) {
+            return;
+        }
+
+        pendingTrackResourcePath = interruptedTrackResourcePath;
+        pendingRandomStart = false;
+        pendingMinimumRemainingMs = 0;
+        pendingExplicitStartPosition = true;
+        pendingStartPositionUs = interruptedTrackPositionUs;
+        interruptedTrackResourcePath = null;
+        interruptedTrackPositionUs = 0;
+        hasPendingTrack = true;
+        notifyAll();
+    }
+
+    public synchronized void clearInterruptedTrack() {
+        interruptedTrackResourcePath = null;
+        interruptedTrackPositionUs = 0;
     }
 
     public synchronized void stopThread() {
@@ -145,7 +186,8 @@ public class MusicHandler extends Thread {
         return volumePercent;
     }
 
-    private void playTrack(String resourcePath, boolean randomStart, long minimumRemainingMs) {
+    private void playTrack(String resourcePath, boolean randomStart, long minimumRemainingMs,
+            boolean explicitStartPosition, long startPositionUs) {
         closeClip();
 
         URL trackUrl = MusicHandler.class.getResource(resourcePath);
@@ -158,7 +200,9 @@ public class MusicHandler extends Thread {
             AudioInputStream audioStream = AudioSystem.getAudioInputStream(trackUrl);
             Clip newClip = AudioSystem.getClip();
             newClip.open(audioStream);
-            if (randomStart) {
+            if (explicitStartPosition) {
+                applyExplicitStartPosition(newClip, startPositionUs);
+            } else if (randomStart) {
                 applyRandomStartPosition(newClip, minimumRemainingMs);
             }
             applyVolumeToClip(newClip);
@@ -167,9 +211,15 @@ public class MusicHandler extends Thread {
                 newClip.start();
             }
             clip = newClip;
+            currentTrackResourcePath = resourcePath;
         } catch (UnsupportedAudioFileException | LineUnavailableException | java.io.IOException e) {
             GameExceptions.handleWithDialog("Failed to play music track", e);
         }
+    }
+
+    private void applyExplicitStartPosition(Clip targetClip, long startPositionUs) {
+        long boundedStart = Math.max(0, Math.min(startPositionUs, targetClip.getMicrosecondLength()));
+        targetClip.setMicrosecondPosition(boundedStart);
     }
 
     private void applyRandomStartPosition(Clip targetClip, long minimumRemainingMs) {
@@ -223,6 +273,19 @@ public class MusicHandler extends Thread {
             }
             clip.close();
             clip = null;
+        }
+    }
+
+    private void saveInterruptedTrackState() {
+        if (clip != null && currentTrackResourcePath != null && !currentTrackResourcePath.isBlank()) {
+            interruptedTrackResourcePath = currentTrackResourcePath;
+            interruptedTrackPositionUs = clip.getMicrosecondPosition();
+            return;
+        }
+
+        if (pendingTrackResourcePath != null && !pendingTrackResourcePath.isBlank()) {
+            interruptedTrackResourcePath = pendingTrackResourcePath;
+            interruptedTrackPositionUs = 0;
         }
     }
 

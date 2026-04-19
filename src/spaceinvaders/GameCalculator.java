@@ -145,7 +145,7 @@ public class GameCalculator extends Thread {
         case DISCO:
             return "Disco Mode!";
         case PACIFIST:
-            return "Pacifist Mode!";
+            return "Weapon Jam Mode!";
         default:
             return "Silly Mode!";
         }
@@ -184,10 +184,11 @@ public class GameCalculator extends Thread {
                 return;
             }
 
-            if (game.isPacifistModeActive()) {
+            if (game.isPacifistModeActive() && game.random.nextInt(100) < 45) {
                 int centerX = game.getShooter_X_Coordinate() + game.getShooterWidth() / 2;
                 int centerY = game.getHeight() - game.getShooterHeight();
                 game.explosions.add(new Explosion(centerX, centerY, 10, 140));
+                game.setAnnouncerMessage("JAMMED!", 500);
                 lastFireTimeMs = now;
                 return;
             }
