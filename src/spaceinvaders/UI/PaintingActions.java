@@ -54,9 +54,14 @@ public class PaintingActions {
         synchronized (game) {
             invadersCopy = new ArrayList<>(game.invaders);
         }
+
+        Image rickInvaderImage = game.imageSelection.getRickInvaderImage();
         
         for (Invader invader : invadersCopy) {
-            g.drawImage(invaderImage, invader.getX(), invader.getY(), invader.getSize(),
+            Image imageToDraw = invader.isRickRollTarget() && rickInvaderImage != null
+                    ? rickInvaderImage
+                    : invaderImage;
+            g.drawImage(imageToDraw, invader.getX(), invader.getY(), invader.getSize(),
                     invader.getSize(), game);
         }
     }

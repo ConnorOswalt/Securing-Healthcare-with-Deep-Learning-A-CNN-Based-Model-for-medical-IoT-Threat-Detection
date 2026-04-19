@@ -9,8 +9,10 @@ import java.util.List;
 import javax.swing.ImageIcon;
 
 public class ImageSelection {
+    private static final String RICK_INVADER_IMAGE_PATH = "/resources/Shooter/Rick.png";
     private Image shooterImage;
     private Image invaderImage;
+    private Image rickInvaderImage;
     private Image bulletImage;
     private Image backgroundImage;
     private boolean starsBackgroundEnabled;
@@ -22,6 +24,13 @@ public class ImageSelection {
 
     public Image getInvaderImage() {
         return invaderImage;
+    }
+
+    public Image getRickInvaderImage() {
+        if (rickInvaderImage == null) {
+            rickInvaderImage = loadImageIfPresent(RICK_INVADER_IMAGE_PATH);
+        }
+        return rickInvaderImage;
     }
 
     public Image getBulletImage() {
@@ -92,6 +101,14 @@ public class ImageSelection {
             return null;
         }
         // ImageIcon supports animated GIFs; ImageIO.read() only loads the first frame
+        return new ImageIcon(url).getImage();
+    }
+
+    private static Image loadImageIfPresent(String resourcePath) {
+        URL url = ImageSelection.class.getResource(resourcePath);
+        if (url == null) {
+            return null;
+        }
         return new ImageIcon(url).getImage();
     }
 }

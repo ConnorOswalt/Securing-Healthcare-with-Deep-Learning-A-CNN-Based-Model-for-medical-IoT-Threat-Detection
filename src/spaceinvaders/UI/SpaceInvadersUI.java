@@ -1,6 +1,7 @@
 package spaceinvaders.UI;
 
 import spaceinvaders.DataHandlers.MusicHandler;
+import spaceinvaders.DataHandlers.MenuImplementations.ThemeImplementation;
 import spaceinvaders.GameCalculator;
 import spaceinvaders.ListenerActions;
 import spaceinvaders.scores.ScoreManager;
@@ -24,6 +25,11 @@ import javax.swing.*;
 public class SpaceInvadersUI extends JPanel implements KeyListener {
     private static SpaceInvadersUI activeInstance;
     private static final String DEATH_SOUND_EFFECT_PATH = "/resources/SoundEffects/player_death.wav";
+    private static final String RICK_THEME_PATH = "/resources/Themes/Rick.json";
+    private static final String RICK_ROLL_MUSIC_PATH = "/resources/Music/NeverGonnaGiveYouUp.wav";
+    private static final String RICK_ROLL_MUSIC_FALLBACK_PATH = "/resources/Music/Retro.wav";
+    private static final String RICK_ROLL_BACKGROUND_PATH = "/resources/Background/RickAstleyDance.gif";
+    private static final String RICK_ROLL_BACKGROUND_FALLBACK_PATH = "/resources/Background/peterWriting.gif";
 
     private final Timer repaintTimer;
     public ArrayList<Invader> invaders;
@@ -205,6 +211,25 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         return musicHandler;
     }
 
+    public void handleRickRollKill() {
+        if (SpaceInvadersUI.class.getResource(RICK_THEME_PATH) != null) {
+            ThemeImplementation.requestThemeChange(this, RICK_THEME_PATH);
+            return;
+        }
+
+        String musicPath = resolveExistingResource(RICK_ROLL_MUSIC_PATH, RICK_ROLL_MUSIC_FALLBACK_PATH);
+        if (musicPath != null && musicHandler != null) {
+            musicHandler.selectTrack(musicPath);
+        }
+
+        String backgroundPath = resolveExistingResource(RICK_ROLL_BACKGROUND_PATH, RICK_ROLL_BACKGROUND_FALLBACK_PATH);
+        if (backgroundPath != null) {
+            imageSelection.setBackgroundImageFromResourcePath(backgroundPath);
+        }
+
+        repaint();
+    }
+
     public boolean isExplosionsEnabled() {
         return explosionsEnabled;
     }
@@ -336,6 +361,16 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         if (musicHandler != null && musicHandler.isAlive()) {
             musicHandler.stopThread();
         }
+    }
+
+    private String resolveExistingResource(String preferredPath, String fallbackPath) {
+        if (SpaceInvadersUI.class.getResource(preferredPath) != null) {
+            return preferredPath;
+        }
+        if (SpaceInvadersUI.class.getResource(fallbackPath) != null) {
+            return fallbackPath;
+        }
+        return null;
     }
 
 }

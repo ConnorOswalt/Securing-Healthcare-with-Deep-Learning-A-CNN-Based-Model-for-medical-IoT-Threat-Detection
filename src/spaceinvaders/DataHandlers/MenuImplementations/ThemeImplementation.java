@@ -30,6 +30,25 @@ public class ThemeImplementation {
     public ThemeImplementation() {
     }
 
+    public static void requestThemeChange(SpaceInvadersUI game, String themePath) {
+        if (game == null || themePath == null || themePath.isBlank()) {
+            return;
+        }
+
+        String normalizedPath = normalizeResourcePath(themePath);
+        if (ThemeImplementation.class.getResource(normalizedPath) == null) {
+            GameExceptions.showErrorDialog("Theme file not found: " + normalizedPath);
+            return;
+        }
+
+        synchronized (THEME_LOCK) {
+            pendingGame = game;
+            pendingThemePath = normalizedPath;
+            hasPendingTheme = true;
+            THEME_LOCK.notifyAll();
+        }
+    }
+
     public void handleThemeSelection(ActionEvent e) {
         if (!(e.getSource() instanceof JMenuItem)) {
             return;
@@ -64,12 +83,7 @@ public class ThemeImplementation {
     }
 
     private void queueThemeChange(SpaceInvadersUI game, String selectedPath) {
-        synchronized (THEME_LOCK) {
-            pendingGame = game;
-            pendingThemePath = selectedPath;
-            hasPendingTheme = true;
-            THEME_LOCK.notifyAll();
-        }
+        requestThemeChange(game, selectedPath);
     }
 
     private static void processThemeChanges() {
