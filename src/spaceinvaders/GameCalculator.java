@@ -250,6 +250,7 @@ public class GameCalculator extends Thread {
                 addExplosionForInvader(inv);
                 it.remove();
                 game.recordInvaderDefeatCombo();
+                    game.healPlayerFromInvaderKill();
                 int points = game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.TINY_PANIC ? 20 : 10;
                 game.addPoints(points);
             }
@@ -371,6 +372,7 @@ public class GameCalculator extends Thread {
                         }
                         invaderIterator.remove();
                         game.recordInvaderDefeatCombo();
+                        game.healPlayerFromInvaderKill();
                         int points = game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.TINY_PANIC ? 20 : 10;
                         game.addPoints(points);
                         if (!bullet.isPiercing()) break;

@@ -114,27 +114,41 @@ public class PaintingActions {
     }
     public void drawPlayerHealth(Graphics g, SpaceInvadersUI game) {
         int playerHealth = game.getPlayerHealth();
-        int heartSize = 16;
-        int startX = 10;
-        int startY = 10;
+        int maxHealth = game.getMaxPlayerHealth();
+        int barX = 10;
+        int barY = 12;
+        int barWidth = 180;
+        int barHeight = 16;
+        float healthRatio = Math.max(0.0f, Math.min(1.0f, playerHealth / (float) maxHealth));
 
-        g.setFont(new Font("Arial", Font.BOLD, 14));
-        g.setColor(Color.WHITE);
-        g.drawString("Player Hearts:", startX, startY + heartSize);
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setFont(new Font("Arial", Font.BOLD, 13));
+        g2d.setColor(Color.WHITE);
+        g2d.drawString("Health", barX, barY - 2);
 
-        for (int i = 0; i < 3; i++) {
-            int x = startX + i * (heartSize + 10);
-            int y = startY + 20;
-            if (i < playerHealth) {
-                g.setColor(Color.RED);
-            } else {
-                g.setColor(Color.GRAY);
-            }
+        g2d.setColor(new Color(35, 35, 35, 220));
+        g2d.fillRoundRect(barX, barY, barWidth, barHeight, 10, 10);
 
-            int[] xPoints = {x + heartSize/2, x, x + heartSize/4, x + heartSize/2, x + 3*heartSize/4, x + heartSize};
-            int[] yPoints = {y + heartSize, y + heartSize/2, y, y, y, y + heartSize/2};
-            g.fillPolygon(xPoints, yPoints, 6);
+        Color fillColor;
+        if (healthRatio > 0.6f) {
+            fillColor = new Color(80, 220, 110);
+        } else if (healthRatio > 0.3f) {
+            fillColor = new Color(255, 190, 70);
+        } else {
+            fillColor = new Color(255, 85, 85);
         }
+
+        g2d.setColor(fillColor);
+        g2d.fillRoundRect(barX, barY, Math.max(0, (int) (barWidth * healthRatio)), barHeight, 10, 10);
+        g2d.setColor(new Color(255, 255, 255, 45));
+        g2d.drawRoundRect(barX, barY, barWidth, barHeight, 10, 10);
+
+        String healthText = playerHealth + "/" + maxHealth;
+        FontMetrics fm = g2d.getFontMetrics();
+        int textX = barX + (barWidth - fm.stringWidth(healthText)) / 2;
+        int textY = barY + barHeight - 3;
+        g2d.setColor(Color.WHITE);
+        g2d.drawString(healthText, textX, textY);
 
         // Draw flashing effect when player is hit
         if (game.isPlayerFlashing()) {

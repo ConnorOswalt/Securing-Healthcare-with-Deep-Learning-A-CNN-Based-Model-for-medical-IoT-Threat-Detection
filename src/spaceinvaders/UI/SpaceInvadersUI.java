@@ -77,7 +77,10 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private MusicHandler musicHandler;
     public static int breakpointcounter = 0;
     private ScoreManager scoreManager;
-    private int playerHealth = 3;
+    private static final int MAX_PLAYER_HEALTH = 100;
+    private static final int PLAYER_HIT_DAMAGE = 34;
+    private static final int INVADER_KILL_HEAL = 6;
+    private int playerHealth = MAX_PLAYER_HEALTH;
     private boolean playerFlashing = false;
     private long playerFlashStartTime = 0;
     private static final long PLAYER_FLASH_DURATION = 300;
@@ -637,12 +640,24 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         return playerHealth;
     }
 
+    public int getMaxPlayerHealth() {
+        return MAX_PLAYER_HEALTH;
+    }
+
+    public void healPlayerFromInvaderKill() {
+        if (gameOver || playerHealth <= 0) {
+            return;
+        }
+
+        playerHealth = Math.min(MAX_PLAYER_HEALTH, playerHealth + INVADER_KILL_HEAL);
+    }
+
     public void damagePlayer() {
         if (playerHealth <= 0 || gameOver) {
             return;
         }
 
-        playerHealth--;
+        playerHealth = Math.max(0, playerHealth - PLAYER_HIT_DAMAGE);
         playerFlashing = true;
         playerFlashStartTime = System.currentTimeMillis();
         repaint();
@@ -793,7 +808,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             if (musicHandler != null) {
                 musicHandler.stopLoopingEffect();
             }
-            playerHealth = 3;
+            playerHealth = MAX_PLAYER_HEALTH;
             playerFlashing = false;
             shooter_X_Coordinate = 200;
             moveLeft = false;
