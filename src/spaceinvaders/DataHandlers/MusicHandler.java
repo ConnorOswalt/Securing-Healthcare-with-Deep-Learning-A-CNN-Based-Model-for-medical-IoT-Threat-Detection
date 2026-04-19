@@ -122,9 +122,9 @@ public class MusicHandler extends Thread {
         selectTrackFromRandomPosition(resourcePath, minimumRemainingMs);
     }
 
-    public synchronized void resumeInterruptedTrack() {
+    public synchronized boolean resumeInterruptedTrack() {
         if (interruptedTrackResourcePath == null || interruptedTrackResourcePath.isBlank()) {
-            return;
+            return false;
         }
 
         pendingTrackResourcePath = interruptedTrackResourcePath;
@@ -137,6 +137,7 @@ public class MusicHandler extends Thread {
         interruptedTrackPositionUs = 0;
         hasPendingTrack = true;
         notifyAll();
+        return true;
     }
 
     public synchronized void clearInterruptedTrack() {

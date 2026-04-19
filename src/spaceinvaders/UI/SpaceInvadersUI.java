@@ -442,7 +442,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             setDeathSoundEffectPath(DEATH_SOUND_EFFECT_PATH);
             clearDeathExplosionSoundEffectPath();
             if (musicHandler != null) {
-                musicHandler.resumeInterruptedTrack();
+                if (!musicHandler.resumeInterruptedTrack()) {
+                    musicHandler.stopCurrentTrack();
+                }
             }
             repaint();
             return;

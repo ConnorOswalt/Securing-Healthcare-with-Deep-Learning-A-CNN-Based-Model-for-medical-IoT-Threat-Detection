@@ -182,7 +182,9 @@ public class ThemeImplementation {
                 game.getMusicHandler().startTemporaryOverrideFromRandomPosition(musicPath,
                         game.getMinimumRickSnippetRemainingMs());
             } else if (game.consumePendingResumeInterruptedTrackAfterRick()) {
-                game.getMusicHandler().resumeInterruptedTrack();
+                if (!game.getMusicHandler().resumeInterruptedTrack()) {
+                    game.getMusicHandler().selectTrack(musicPath);
+                }
             } else {
                 game.getMusicHandler().selectTrack(musicPath);
             }
