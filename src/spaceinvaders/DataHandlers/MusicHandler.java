@@ -4,6 +4,8 @@ import spaceinvaders.GameExceptions;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -24,10 +26,12 @@ public class MusicHandler extends Thread {
     private long pendingMinimumRemainingMs = 0;
     private boolean pendingExplicitStartPosition = false;
     private long pendingStartPositionUs = 0;
+    private boolean pendingUseSavedPosition = false;
     private Clip clip;
     private String currentTrackResourcePath;
     private String interruptedTrackResourcePath;
     private long interruptedTrackPositionUs = 0;
+    private final Map<String, Long> trackResumePositionsUs = new HashMap<>();
     private boolean muted = false;
     private int volumePercent = 80;
 
@@ -44,6 +48,7 @@ public class MusicHandler extends Thread {
             long minimumRemainingMs;
             boolean explicitStartPosition;
             long startPositionUs;
+            boolean useSavedPosition;
             synchronized (this) {
                 while (running && !hasPendingTrack) {
                     try {
@@ -64,14 +69,17 @@ public class MusicHandler extends Thread {
                 minimumRemainingMs = pendingMinimumRemainingMs;
                 explicitStartPosition = pendingExplicitStartPosition;
                 startPositionUs = pendingStartPositionUs;
+                useSavedPosition = pendingUseSavedPosition;
                 hasPendingTrack = false;
                 pendingRandomStart = false;
                 pendingMinimumRemainingMs = 0;
                 pendingExplicitStartPosition = false;
                 pendingStartPositionUs = 0;
+                pendingUseSavedPosition = false;
             }
 
-            playTrack(trackPath, randomStart, minimumRemainingMs, explicitStartPosition, startPositionUs);
+            playTrack(trackPath, randomStart, minimumRemainingMs, explicitStartPosition, startPositionUs,
+                    useSavedPosition);
         }
 
         closeClip();
@@ -83,6 +91,7 @@ public class MusicHandler extends Thread {
         pendingMinimumRemainingMs = 0;
         pendingExplicitStartPosition = false;
         pendingStartPositionUs = 0;
+        pendingUseSavedPosition = true;
         hasPendingTrack = true;
         notifyAll();
     }
@@ -93,6 +102,7 @@ public class MusicHandler extends Thread {
         pendingMinimumRemainingMs = Math.max(0, minimumRemainingMs);
         pendingExplicitStartPosition = false;
         pendingStartPositionUs = 0;
+        pendingUseSavedPosition = false;
         hasPendingTrack = true;
         notifyAll();
     }
@@ -112,6 +122,7 @@ public class MusicHandler extends Thread {
         pendingMinimumRemainingMs = 0;
         pendingExplicitStartPosition = true;
         pendingStartPositionUs = interruptedTrackPositionUs;
+        pendingUseSavedPosition = false;
         interruptedTrackResourcePath = null;
         interruptedTrackPositionUs = 0;
         hasPendingTrack = true;
@@ -129,6 +140,7 @@ public class MusicHandler extends Thread {
     }
 
     public synchronized void stopCurrentTrack() {
+        saveCurrentTrackPosition();
         closeClip();
     }
 
@@ -187,7 +199,8 @@ public class MusicHandler extends Thread {
     }
 
     private void playTrack(String resourcePath, boolean randomStart, long minimumRemainingMs,
-            boolean explicitStartPosition, long startPositionUs) {
+            boolean explicitStartPosition, long startPositionUs, boolean useSavedPosition) {
+        saveCurrentTrackPosition();
         closeClip();
 
         URL trackUrl = MusicHandler.class.getResource(resourcePath);
@@ -204,6 +217,8 @@ public class MusicHandler extends Thread {
                 applyExplicitStartPosition(newClip, startPositionUs);
             } else if (randomStart) {
                 applyRandomStartPosition(newClip, minimumRemainingMs);
+            } else if (useSavedPosition) {
+                applySavedStartPosition(resourcePath, newClip);
             }
             applyVolumeToClip(newClip);
             newClip.loop(Clip.LOOP_CONTINUOUSLY);
@@ -220,6 +235,15 @@ public class MusicHandler extends Thread {
     private void applyExplicitStartPosition(Clip targetClip, long startPositionUs) {
         long boundedStart = Math.max(0, Math.min(startPositionUs, targetClip.getMicrosecondLength()));
         targetClip.setMicrosecondPosition(boundedStart);
+    }
+
+    private synchronized void applySavedStartPosition(String resourcePath, Clip targetClip) {
+        Long savedPositionUs = trackResumePositionsUs.get(resourcePath);
+        if (savedPositionUs == null) {
+            return;
+        }
+
+        applyExplicitStartPosition(targetClip, savedPositionUs);
     }
 
     private void applyRandomStartPosition(Clip targetClip, long minimumRemainingMs) {
@@ -274,6 +298,14 @@ public class MusicHandler extends Thread {
             clip.close();
             clip = null;
         }
+    }
+
+    private synchronized void saveCurrentTrackPosition() {
+        if (clip == null || currentTrackResourcePath == null || currentTrackResourcePath.isBlank()) {
+            return;
+        }
+
+        trackResumePositionsUs.put(currentTrackResourcePath, clip.getMicrosecondPosition());
     }
 
     private void saveInterruptedTrackState() {
