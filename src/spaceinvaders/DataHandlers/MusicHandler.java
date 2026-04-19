@@ -73,6 +73,18 @@ public class MusicHandler extends Thread {
         closeClip();
     }
 
+    public synchronized void resumeTrack() {
+        if (pendingTrackResourcePath != null) {
+            selectTrack(pendingTrackResourcePath);
+        }
+    }
+
+    /** Stores the track path for later playback without starting it immediately. */
+    public synchronized void queueTrackWithoutPlaying(String resourcePath) {
+        pendingTrackResourcePath = resourcePath;
+        hasPendingTrack = false; // Don't wake the playback thread
+    }
+
     public void playOneShotEffect(String resourcePath) {
         Thread effectThread = new Thread(() -> playEffectNow(resourcePath), "SoundEffect-Thread");
         effectThread.setDaemon(true);

@@ -410,6 +410,11 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         gameCalculator.start();
         // Don't restart scoreManager - it's a daemon thread that keeps running
         repaintTimer.start();
+
+        // Resume music that was playing before the game ended
+        if (musicHandler != null) {
+            musicHandler.resumeTrack();
+        }
     }
 
     /**

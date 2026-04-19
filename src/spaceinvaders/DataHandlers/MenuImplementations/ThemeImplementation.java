@@ -128,7 +128,11 @@ public class ThemeImplementation {
 
         String musicPath = extractPath(jsonContent, "music");
         if (musicPath != null && game.getMusicHandler() != null) {
-            game.getMusicHandler().selectTrack(musicPath);
+            if (game.isGameOver()) {
+                game.getMusicHandler().queueTrackWithoutPlaying(musicPath);
+            } else {
+                game.getMusicHandler().selectTrack(musicPath);
+            }
         }
 
         SwingUtilities.invokeLater(game::repaint);

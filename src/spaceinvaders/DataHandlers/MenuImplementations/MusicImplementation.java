@@ -36,11 +36,19 @@ public class MusicImplementation {
                 return;
             }
 
-            game.getMusicHandler().selectTrack(normalizedPath);
+            applyOrQueueTrack(game, normalizedPath);
             return;
         }
 
-        game.getMusicHandler().selectTrack(selectedPath);
+        applyOrQueueTrack(game, selectedPath);
+    }
+
+    private void applyOrQueueTrack(SpaceInvadersUI game, String path) {
+        if (game.isGameOver()) {
+            game.getMusicHandler().queueTrackWithoutPlaying(path);
+        } else {
+            game.getMusicHandler().selectTrack(path);
+        }
     }
 
     private String normalizeResourcePath(String customPath) {
