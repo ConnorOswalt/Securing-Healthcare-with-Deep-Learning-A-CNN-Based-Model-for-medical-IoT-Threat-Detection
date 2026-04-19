@@ -1,0 +1,8 @@
+{
+  "name": "Doom",
+  "shooter": "/resources/Shooter/Doomguy.gif",
+  "invader": "/resources/Invader/imp-walk-imp-chase.gif",
+  "bullet": "/resources/Bullet/bullet.gif",
+  "background": "/resources/Background/doom.jpg",
+  "music": "/resources/Music/Doom.wav"
+}
