@@ -81,6 +81,7 @@ public class ThemeImplementation {
             return;
         }
 
+        game.clearTemporaryRickRestore();
         queueThemeChange(game, selectedPath);
     }
 
@@ -123,6 +124,8 @@ public class ThemeImplementation {
             return;
         }
 
+        game.setCurrentThemePath(jsonResourcePath);
+
         applyImagePath(game, jsonContent, "shooter", game.imageSelection::setShooterImageFromResourcePath);
         applyImagePath(game, jsonContent, "invader", game.imageSelection::setInvaderImageFromResourcePath);
         applyImagePath(game, jsonContent, "bullet", game.imageSelection::setBulletImageFromResourcePath);
@@ -159,6 +162,9 @@ public class ThemeImplementation {
         if (musicPath != null && game.getMusicHandler() != null) {
             if (game.isGameOver()) {
                 game.getMusicHandler().queueTrackWithoutPlaying(musicPath);
+            } else if (game.consumePendingRandomRickSnippet()) {
+                game.getMusicHandler().selectTrackFromRandomPosition(musicPath,
+                        game.getMinimumRickSnippetRemainingMs());
             } else {
                 game.getMusicHandler().selectTrack(musicPath);
             }

@@ -79,6 +79,7 @@ public class GameCalculator extends Thread {
             return;
         }
 
+        game.updateTemporaryRickThemeRestore();
         updateSillyModeState();
         
         updateShooterPosition();

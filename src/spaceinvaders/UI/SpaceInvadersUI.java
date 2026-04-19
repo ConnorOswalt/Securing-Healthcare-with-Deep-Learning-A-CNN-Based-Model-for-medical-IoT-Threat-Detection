@@ -41,6 +41,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private static final String RICK_ROLL_MUSIC_FALLBACK_PATH = "/resources/Music/Retro.wav";
     private static final String RICK_ROLL_BACKGROUND_PATH = "/resources/Background/RickAstleyDance.gif";
     private static final String RICK_ROLL_BACKGROUND_FALLBACK_PATH = "/resources/Background/peterWriting.gif";
+    private static final long MIN_TEMPORARY_RICK_THEME_DURATION_MS = 3000;
+    private static final long TEMPORARY_RICK_THEME_DURATION_RANGE_MS = 5000;
+    private static final long MINIMUM_RICK_SNIPPET_REMAINING_MS = 8000;
 
     private final Timer repaintTimer;
     public ArrayList<Invader> invaders;
@@ -82,6 +85,11 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private long comboMessageUntilMs = 0;
     private int comboCount = 0;
     private long comboWindowUntilMs = 0;
+    private String currentThemePath;
+    private String temporaryRickRestoreThemePath;
+    private long temporaryRickRestoreAtMs = 0;
+    private boolean temporaryRickRestoreToDefaultState = false;
+    private boolean pendingRandomRickSnippet = false;
 
     // Constructor
     public SpaceInvadersUI() {
@@ -300,6 +308,49 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         return musicHandler;
     }
 
+    public void setCurrentThemePath(String currentThemePath) {
+        this.currentThemePath = currentThemePath;
+    }
+
+    public boolean consumePendingRandomRickSnippet() {
+        boolean shouldUseRandomSnippet = pendingRandomRickSnippet;
+        pendingRandomRickSnippet = false;
+        return shouldUseRandomSnippet;
+    }
+
+    public long getMinimumRickSnippetRemainingMs() {
+        return MINIMUM_RICK_SNIPPET_REMAINING_MS;
+    }
+
+    public void clearTemporaryRickRestore() {
+        temporaryRickRestoreThemePath = null;
+        temporaryRickRestoreAtMs = 0;
+        temporaryRickRestoreToDefaultState = false;
+    }
+
+    public void updateTemporaryRickThemeRestore() {
+        if ((!temporaryRickRestoreToDefaultState && temporaryRickRestoreThemePath == null)
+                || System.currentTimeMillis() < temporaryRickRestoreAtMs) {
+            return;
+        }
+
+        boolean restoreDefaultState = temporaryRickRestoreToDefaultState;
+        String restoreThemePath = temporaryRickRestoreThemePath;
+        clearTemporaryRickRestore();
+        if (restoreDefaultState) {
+            imageSelection.restoreDefaultThemeState(this);
+            currentThemePath = null;
+            setDeathSoundEffectPath(DEATH_SOUND_EFFECT_PATH);
+            if (musicHandler != null) {
+                musicHandler.stopCurrentTrack();
+            }
+            repaint();
+            return;
+        }
+
+        ThemeImplementation.requestThemeChange(this, restoreThemePath);
+    }
+
     public boolean isSillinessModeEnabled() {
         return sillinessModeEnabled;
     }
@@ -387,7 +438,22 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     }
 
     public void handleRickRollKill() {
+        if (RICK_THEME_PATH.equals(currentThemePath)) {
+            return;
+        }
+
         if (SpaceInvadersUI.class.getResource(RICK_THEME_PATH) != null) {
+            long randomRickDurationMs = MIN_TEMPORARY_RICK_THEME_DURATION_MS
+                    + random.nextInt((int) TEMPORARY_RICK_THEME_DURATION_RANGE_MS + 1);
+            if (currentThemePath != null && !currentThemePath.isBlank()) {
+                temporaryRickRestoreThemePath = currentThemePath;
+                temporaryRickRestoreAtMs = System.currentTimeMillis() + randomRickDurationMs;
+            } else {
+                temporaryRickRestoreThemePath = null;
+                temporaryRickRestoreToDefaultState = true;
+                temporaryRickRestoreAtMs = System.currentTimeMillis() + randomRickDurationMs;
+            }
+            pendingRandomRickSnippet = true;
             ThemeImplementation.requestThemeChange(this, RICK_THEME_PATH);
             return;
         }
@@ -574,6 +640,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             comboMessage = "";
             comboCount = 0;
             comboWindowUntilMs = 0;
+            clearTemporaryRickRestore();
         }
 
         // Reset the current score for the new game

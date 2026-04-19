@@ -97,6 +97,14 @@ public class ImageSelection {
         // bulletImage starts null; falls back to triangle shape until user picks one
     }
 
+    public void restoreDefaultThemeState(SpaceInvadersUI game) {
+        setGameImages();
+        bulletImage = null;
+        clearDeathSkinImage();
+        clearDeathScreenImage();
+        enableStarsBackground(game);
+    }
+
     public void setShooterImageFromResourcePath(String resourcePath) {
         Image loadedImage = loadImage("shooter", resourcePath);
         if (loadedImage != null) {
