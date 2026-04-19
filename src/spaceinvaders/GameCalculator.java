@@ -5,6 +5,7 @@ import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.DeathEffect;
 import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
+import spaceinvaders.characters.PowerUp;
 
 import java.awt.*;
 import java.util.Iterator;
@@ -25,10 +26,13 @@ public class GameCalculator extends Thread {
     private static final long EXPLOSION_DURATION_MS = 300;
     private static final int RICK_INVADER_CHANCE_PERCENT = 2;
         private static final long MODIFIER_DURATION_MS = 8000;
+    private static final long POWER_UP_DURATION_MS = 8000;
+    private static final long LASER_BEAM_FLASH_MS = 120;
     private long lastFireTimeMs = 0;
-        private long nextModifierRollMs = System.currentTimeMillis() + 15000;
-        private long nextAchievementMs = System.currentTimeMillis() + 12000;
-        private int spawnCounter = 0;
+    private long nextModifierRollMs = System.currentTimeMillis() + 15000;
+    private long nextAchievementMs = System.currentTimeMillis() + 12000;
+    private long nextPowerUpSpawnMs = System.currentTimeMillis() + 18000;
+    private int spawnCounter = 0;
 
         private static final String[] BOSS_ROASTS = {
             "Boss Roast: You fight like a loading bar",
@@ -81,7 +85,7 @@ public class GameCalculator extends Thread {
 
         game.updateTemporaryRickThemeRestore();
         updateSillyModeState();
-        
+
         updateShooterPosition();
         handleShooting();
         updateInvaderPositions();
@@ -90,6 +94,9 @@ public class GameCalculator extends Thread {
         updateExplosions();
         updateDeathEffects();
         spawnNewInvaders();
+        spawnPowerUp();
+        updatePowerUpPositions();
+        checkPowerUpCollection();
     }
 
     private void updateSillyModeState() {
@@ -180,7 +187,9 @@ public class GameCalculator extends Thread {
             }
 
             long now = System.currentTimeMillis();
-            if (now - lastFireTimeMs < FIRE_INTERVAL_MS) {
+            SpaceInvadersUI.PowerUpType powerUp = game.getActivePowerUp();
+            long interval = powerUp == SpaceInvadersUI.PowerUpType.RAPID_FIRE ? FIRE_INTERVAL_MS / 3 : FIRE_INTERVAL_MS;
+            if (now - lastFireTimeMs < interval) {
                 return;
             }
 
@@ -196,8 +205,54 @@ public class GameCalculator extends Thread {
             int shooterX = game.getShooter_X_Coordinate();
             int shooterWidth = game.getShooterWidth();
             int shooterHeight = game.getShooterHeight();
-            game.bullets.add(new Bullet(shooterX + shooterWidth / 2, game.getHeight() - shooterHeight));
+            int baseX = shooterX + shooterWidth / 2;
+            int baseY = game.getHeight() - shooterHeight;
+
+            switch (powerUp) {
+                case TRIPLE_SHOT -> {
+                    game.bullets.add(new Bullet(baseX, baseY, 0));
+                    game.bullets.add(new Bullet(baseX - 18, baseY, -1));
+                    game.bullets.add(new Bullet(baseX + 18, baseY, 1));
+                }
+                case SHOTGUN -> {
+                    for (int i = -2; i <= 2; i++) {
+                        game.bullets.add(new Bullet(baseX + i * 14, baseY, i * 2));
+                    }
+                }
+                case BOUNCING -> {
+                    Bullet b = new Bullet(baseX, baseY, 0);
+                    b.setBouncing(true);
+                    game.bullets.add(b);
+                }
+                case PIERCING -> {
+                    Bullet pb = new Bullet(baseX, baseY, 0);
+                    pb.setPiercing(true);
+                    game.bullets.add(pb);
+                }
+                case LASER_BEAM -> fireLaserBeam(shooterX, shooterWidth, baseX, now);
+                default -> game.bullets.add(new Bullet(baseX, baseY, 0));
+            }
             lastFireTimeMs = now;
+        }
+    }
+
+    private void fireLaserBeam(int shooterX, int shooterWidth, int beamX, long now) {
+        game.laserBeamX = beamX;
+        game.laserBeamUntilMs = now + LASER_BEAM_FLASH_MS;
+        int beamLeft  = beamX - 12;
+        int beamRight = beamX + 12;
+        Iterator<Invader> it = game.invaders.iterator();
+        while (it.hasNext()) {
+            Invader inv = it.next();
+            int cx = inv.getX() + inv.getSize() / 2;
+            if (cx >= beamLeft && cx <= beamRight) {
+                if (inv.isRickRollTarget()) game.handleRickRollKill();
+                addExplosionForInvader(inv);
+                it.remove();
+                game.recordInvaderDefeatCombo();
+                int points = game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.TINY_PANIC ? 20 : 10;
+                game.addPoints(points);
+            }
         }
     }
 
@@ -275,6 +330,18 @@ public class GameCalculator extends Thread {
                     yStep = 8;
                 }
 
+                // Apply horizontal velocity (spread shots)
+                if (bullet.getVx() != 0) {
+                    int newX = bullet.getX() + bullet.getVx();
+                    if (bullet.isBouncing()) {
+                        if (newX < 0 || newX > game.getWidth()) {
+                            bullet.setVx(-bullet.getVx());
+                            newX = bullet.getX() + bullet.getVx();
+                        }
+                    }
+                    bullet.setX(newX);
+                }
+
                 bullet.setY(y - yStep);
                 if (bullet.getY() < 0) {
                     bulletIterator.remove();
@@ -299,12 +366,14 @@ public class GameCalculator extends Thread {
                             game.handleRickRollKill();
                         }
                         addExplosionForInvader(invader);
-                        bulletIterator.remove();
+                        if (!bullet.isPiercing()) {
+                            bulletIterator.remove();
+                        }
                         invaderIterator.remove();
                         game.recordInvaderDefeatCombo();
                         int points = game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.TINY_PANIC ? 20 : 10;
                         game.addPoints(points);
-                        break;
+                        if (!bullet.isPiercing()) break;
                     }
                 }
             }
@@ -365,5 +434,53 @@ public class GameCalculator extends Thread {
 
     public void stopThread() {
         running = false;
+    }
+
+    // ----------------------------- Power-up lifecycle ---------------------------
+
+    private void spawnPowerUp() {
+        long now = System.currentTimeMillis();
+        if (now < nextPowerUpSpawnMs) return;
+        SpaceInvadersUI.PowerUpType[] types = {
+            SpaceInvadersUI.PowerUpType.RAPID_FIRE,
+            SpaceInvadersUI.PowerUpType.TRIPLE_SHOT,
+            SpaceInvadersUI.PowerUpType.PIERCING,
+            SpaceInvadersUI.PowerUpType.SHOTGUN,
+            SpaceInvadersUI.PowerUpType.LASER_BEAM,
+            SpaceInvadersUI.PowerUpType.BOUNCING
+        };
+        SpaceInvadersUI.PowerUpType type = types[game.random.nextInt(types.length)];
+        int x = game.random.nextInt(Math.max(1, game.getWidth() - PowerUp.SIZE));
+        synchronized (game) {
+            game.powerUps.add(new PowerUp(x, type));
+        }
+        nextPowerUpSpawnMs = now + 15000 + game.random.nextInt(10000);
+    }
+
+    private void updatePowerUpPositions() {
+        synchronized (game) {
+            Iterator<PowerUp> it = game.powerUps.iterator();
+            while (it.hasNext()) {
+                PowerUp p = it.next();
+                p.tick();
+                if (p.isOffScreen(game.getHeight())) it.remove();
+            }
+        }
+    }
+
+    private void checkPowerUpCollection() {
+        int sx = game.getShooter_X_Coordinate();
+        int sy = game.getHeight() - game.getShooterHeight();
+        Rectangle shooter = new Rectangle(sx, sy, game.getShooterWidth(), game.getShooterHeight());
+        synchronized (game) {
+            Iterator<PowerUp> it = game.powerUps.iterator();
+            while (it.hasNext()) {
+                PowerUp p = it.next();
+                if (shooter.intersects(new Rectangle(p.getX(), p.getY(), PowerUp.SIZE, PowerUp.SIZE))) {
+                    game.activatePowerUp(p.getType(), POWER_UP_DURATION_MS);
+                    it.remove();
+                }
+            }
+        }
     }
 }

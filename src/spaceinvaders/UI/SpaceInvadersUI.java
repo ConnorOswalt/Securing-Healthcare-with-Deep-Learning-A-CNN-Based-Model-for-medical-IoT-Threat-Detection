@@ -20,6 +20,7 @@ import spaceinvaders.UI.JMenus.ThemesMenu;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
 import javax.swing.*;
 
@@ -32,6 +33,16 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         MIRROR,
         DISCO,
         PACIFIST
+    }
+
+    public enum PowerUpType {
+        NONE,
+        RAPID_FIRE,
+        TRIPLE_SHOT,
+        PIERCING,
+        SHOTGUN,
+        LASER_BEAM,
+        BOUNCING
     }
 
     private static SpaceInvadersUI activeInstance;
@@ -50,6 +61,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public ArrayList<Bullet> bullets;
     public ArrayList<Explosion> explosions;
     public ArrayList<DeathEffect> deathEffects;
+    public List<spaceinvaders.characters.PowerUp> powerUps;
     public Random random;
     public boolean moveLeft, moveRight;
     public boolean fireHeld;
@@ -80,6 +92,10 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private boolean sillinessModeEnabled = true;
     private SillyModifier activeSillyModifier = SillyModifier.NONE;
     private long activeModifierUntilMs = 0;
+    private PowerUpType activePowerUp = PowerUpType.NONE;
+    private long activePowerUpUntilMs = 0;
+    public int laserBeamX = -1;
+    public long laserBeamUntilMs = 0;
     private String announcerMessage = "";
     private long announcerMessageUntilMs = 0;
     private String fakeAchievementMessage = "";
@@ -106,6 +122,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         bullets = new ArrayList<>();
         explosions = new ArrayList<>();
         deathEffects = new ArrayList<>();
+        powerUps = new ArrayList<>();
         random = new Random();
         moveLeft = false;
         moveRight = false;
@@ -201,14 +218,23 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         // Draw invader death-skin flash/fade effects
         paintingActions.drawDeathEffects(g, this);
 
-        // Draw bullets (bullets)
+        // Draw power-up collectibles
+        paintingActions.drawPowerUps(g, this);
+
+        // Draw bullets
         paintingActions.drawBullets(g, this);
+
+        // Laser beam flash
+        paintingActions.drawLaserBeam(g, this);
 
         // Draw player health hearts
         paintingActions.drawPlayerHealth(g, this);
 
         // Draw current score
         paintingActions.drawCurrentScore(g, this);
+
+        // Active power-up HUD bar
+        paintingActions.drawActivePowerUpHud(g, this);
 
         drawSillyOverlay(g);
     }
@@ -224,16 +250,16 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             g2d.fillRect(0, 0, getWidth(), getHeight());
         }
 
-        g2d.setFont(new Font("Arial", Font.BOLD, 20));
+        g2d.setFont(new Font("Arial", Font.BOLD, 22));
         FontMetrics fm = g2d.getFontMetrics();
 
         if (!announcerMessage.isEmpty() && now < announcerMessageUntilMs) {
             int w = fm.stringWidth(announcerMessage);
             int x = (getWidth() - w) / 2;
-            int y = 36;
+            int y = 34;
             g2d.setColor(new Color(0, 0, 0, 170));
-            g2d.fillRoundRect(x - 12, y - 22, w + 24, 30, 14, 14);
-            g2d.setColor(new Color(255, 230, 40));
+            g2d.fillRoundRect(x - 12, y - 22, w + 24, 32, 14, 14);
+            g2d.setColor(Color.WHITE);
             g2d.drawString(announcerMessage, x, y);
         }
 
@@ -398,6 +424,37 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public void clearActiveSillyModifier() {
         this.activeSillyModifier = SillyModifier.NONE;
         this.activeModifierUntilMs = 0;
+    }
+
+    public PowerUpType getActivePowerUp() {
+        if (activePowerUp != PowerUpType.NONE && System.currentTimeMillis() >= activePowerUpUntilMs) {
+            activePowerUp = PowerUpType.NONE;
+        }
+        return activePowerUp;
+    }
+
+    public long getActivePowerUpUntilMs() {
+        return activePowerUpUntilMs;
+    }
+
+    public void activatePowerUp(PowerUpType type, long durationMs) {
+        this.activePowerUp = type;
+        this.activePowerUpUntilMs = System.currentTimeMillis() + durationMs;
+        String name = switch (type) {
+            case RAPID_FIRE  -> "RAPID FIRE!";
+            case TRIPLE_SHOT -> "TRIPLE SHOT!";
+            case PIERCING    -> "PIERCING ROUNDS!";
+            case SHOTGUN     -> "SHOTGUN BLAST!";
+            case LASER_BEAM  -> "LASER BEAM!";
+            case BOUNCING    -> "BOUNCING BULLETS!";
+            default          -> "";
+        };
+        if (!name.isEmpty()) setAnnouncerMessage(name, 2000);
+    }
+
+    public void clearActivePowerUp() {
+        this.activePowerUp = PowerUpType.NONE;
+        this.activePowerUpUntilMs = 0;
     }
 
     public boolean isModifierExpired() {
@@ -668,6 +725,10 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             bullets.clear();
             explosions.clear();
             deathEffects.clear();
+            powerUps.clear();
+            clearActivePowerUp();
+            laserBeamX = -1;
+            laserBeamUntilMs = 0;
             gameOver = false;
             deathSoundPlayed = false;
             gameOverFlashStartTime = 0; // Reset game over flash timer

@@ -4,6 +4,7 @@ import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.DeathEffect;
 import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
+import spaceinvaders.characters.PowerUp;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -173,5 +174,71 @@ public class PaintingActions {
         }
 
         g2d.setComposite(originalComposite);
+    }
+
+    public void drawPowerUps(Graphics g, SpaceInvadersUI game) {
+        List<PowerUp> copy;
+        synchronized (game) {
+            copy = new ArrayList<>(game.powerUps);
+        }
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        for (PowerUp p : copy) {
+            g2d.setColor(p.getColor());
+            g2d.fillRoundRect(p.getX(), p.getY(), PowerUp.SIZE, PowerUp.SIZE, 8, 8);
+            g2d.setColor(Color.WHITE);
+            g2d.setFont(new Font("Arial", Font.BOLD, 9));
+            FontMetrics fm = g2d.getFontMetrics();
+            String label = p.getLabel();
+            int lx = p.getX() + (PowerUp.SIZE - fm.stringWidth(label)) / 2;
+            int ly = p.getY() + (PowerUp.SIZE + fm.getAscent()) / 2 - 2;
+            g2d.drawString(label, lx, ly);
+        }
+    }
+
+    public void drawLaserBeam(Graphics g, SpaceInvadersUI game) {
+        if (game.laserBeamX < 0 || System.currentTimeMillis() > game.laserBeamUntilMs) return;
+        Graphics2D g2d = (Graphics2D) g;
+        Composite orig = g2d.getComposite();
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.55f));
+        g2d.setColor(new Color(255, 80, 255));
+        g2d.fillRect(game.laserBeamX - 10, 0, 20, game.getHeight());
+        g2d.setComposite(orig);
+    }
+
+    public void drawActivePowerUpHud(Graphics g, SpaceInvadersUI game) {
+        SpaceInvadersUI.PowerUpType active = game.getActivePowerUp();
+        if (active == SpaceInvadersUI.PowerUpType.NONE) return;
+        long remaining = game.getActivePowerUpUntilMs() - System.currentTimeMillis();
+        if (remaining <= 0) return;
+
+        Graphics2D g2d = (Graphics2D) g;
+        int barW = 150;
+        int barH = 12;
+        int bx = 10;
+        int by = game.getHeight() - 55;
+
+        String name = switch (active) {
+            case RAPID_FIRE  -> "RAPID FIRE";
+            case TRIPLE_SHOT -> "TRIPLE SHOT";
+            case PIERCING    -> "PIERCING";
+            case SHOTGUN     -> "SHOTGUN";
+            case LASER_BEAM  -> "LASER BEAM";
+            case BOUNCING    -> "BOUNCING";
+            default          -> "";
+        };
+
+        g2d.setFont(new Font("Arial", Font.BOLD, 12));
+        g2d.setColor(Color.WHITE);
+        g2d.drawString(name, bx, by - 4);
+
+        // Background bar
+        g2d.setColor(new Color(60, 60, 60, 200));
+        g2d.fillRoundRect(bx, by, barW, barH, 4, 4);
+
+        // Fill bar proportional to time remaining
+        float frac = Math.min(1f, remaining / 8000f);
+        g2d.setColor(new Color(80, 200, 255));
+        g2d.fillRoundRect(bx, by, (int)(barW * frac), barH, 4, 4);
     }
 }
