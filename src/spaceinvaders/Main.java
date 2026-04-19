@@ -21,6 +21,18 @@ public class Main {
             JMenuItem viewLeaderboardItem = new JMenuItem("View Leaderboard");
             viewLeaderboardItem.addActionListener(e -> LeaderboardPanel.showLeaderboard(game.getScoreManager()));
             scoresMenu.add(viewLeaderboardItem);
+            
+            // Add separator
+            scoresMenu.addSeparator();
+            
+            // Add checkbox to enable/disable leaderboard
+            JCheckBoxMenuItem enableLeaderboardItem = new JCheckBoxMenuItem("Enable Leaderboard", true);
+            enableLeaderboardItem.addActionListener(e -> {
+                LeaderboardPanel.setLeaderboardEnabled(enableLeaderboardItem.isSelected());
+                viewLeaderboardItem.setEnabled(enableLeaderboardItem.isSelected());
+            });
+            scoresMenu.add(enableLeaderboardItem);
+            
             menuBar.add(scoresMenu);
             
             frame.setJMenuBar(menuBar);

@@ -9,8 +9,11 @@ public class LeaderboardPanel extends JPanel {
     private ScoreManager scoreManager;
     private JTable leaderboardTable;
     private DefaultTableModel tableModel;
-    private Timer refreshTimer;
+    public Timer refreshTimer;
     private JLabel noScoresLabel;
+    
+    // Static field to track if leaderboard is enabled
+    private static boolean leaderboardEnabled = true;
 
     public LeaderboardPanel(ScoreManager scoreManager) {
         this.scoreManager = scoreManager;
@@ -115,10 +118,16 @@ public class LeaderboardPanel extends JPanel {
     /**
      * Opens the leaderboard in a new JDialog centered on screen.
      * The dialog is non-modal, allowing the game to continue running while viewing the leaderboard.
+     * Does nothing if the leaderboard is disabled.
      * 
      * @param manager the ScoreManager to display leaderboard from
      */
     public static void showLeaderboard(ScoreManager manager) {
+        // Check if leaderboard is enabled
+        if (!leaderboardEnabled) {
+            return;
+        }
+        
         JDialog dialog = new JDialog();
         dialog.setTitle("High Scores");
         dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
@@ -142,5 +151,23 @@ public class LeaderboardPanel extends JPanel {
         
         dialog.add(panel);
         dialog.setVisible(true);
+    }
+    
+    /**
+     * Sets whether the leaderboard is enabled.
+     * 
+     * @param enabled true to enable leaderboard, false to disable
+     */
+    public static void setLeaderboardEnabled(boolean enabled) {
+        leaderboardEnabled = enabled;
+    }
+    
+    /**
+     * Gets whether the leaderboard is enabled.
+     * 
+     * @return true if leaderboard is enabled, false if disabled
+     */
+    public static boolean isLeaderboardEnabled() {
+        return leaderboardEnabled;
     }
 }

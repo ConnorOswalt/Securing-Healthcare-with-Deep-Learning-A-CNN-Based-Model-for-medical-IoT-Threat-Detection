@@ -22,7 +22,7 @@ public class GameCalculator extends Thread {
     private static final long UPDATE_INTERVAL_MS = 20; // Same as original timer interval
     private static final long FIRE_INTERVAL_MS = 150;
     private static final long EXPLOSION_DURATION_MS = 300;
-    private static final int RICK_INVADER_CHANCE_PERCENT = 8;
+    private static final int RICK_INVADER_CHANCE_PERCENT = 2;
     private long lastFireTimeMs = 0;
 
     public GameCalculator(SpaceInvadersUI game) {
@@ -111,7 +111,7 @@ public class GameCalculator extends Thread {
 
     private void spawnNewInvaders() {
         synchronized (game) {
-            if (game.random.nextInt(100) < 2) {
+            if (game.random.nextInt(100) < 5) {
                 int x = game.random.nextInt(game.getWidth());
                 boolean isRickInvader = game.random.nextInt(100) < RICK_INVADER_CHANCE_PERCENT;
                 game.invaders.add(new Invader(x, 0, 40, isRickInvader));

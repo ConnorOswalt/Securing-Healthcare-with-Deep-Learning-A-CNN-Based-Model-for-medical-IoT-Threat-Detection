@@ -8,6 +8,7 @@ import spaceinvaders.DataHandlers.MenuImplementations.MusicImplementation;
 import spaceinvaders.DataHandlers.MenuImplementations.ShooterImplementation;
 import spaceinvaders.DataHandlers.MenuImplementations.ThemeImplementation;
 import spaceinvaders.UI.SpaceInvadersUI;
+import spaceinvaders.scores.LeaderboardPanel;
 
 import java.awt.event.*;
 import javax.swing.JOptionPane;
@@ -42,18 +43,21 @@ public class ListenerActions {
             game.fireHeld = true;
         }
         if (key == KeyEvent.VK_R && game.isGameOver()) {
-            // Prompt for player name before restarting
-            // Use SwingUtilities.invokeLater to ensure dialog appears on EDT
-            // Pass the game component as parent for proper focus and positioning
+            // Only prompt for name if leaderboard is enabled
             SwingUtilities.invokeLater(() -> {
-                String playerName = JOptionPane.showInputDialog(game, 
-                    "Enter your name for the leaderboard:", 
-                    "Player Name");
-                if (playerName != null && !playerName.trim().isEmpty()) {
-                    game.getScoreManager().saveScore(playerName.trim());
-                } else {
-                    // Save with default name if user cancels
-                    game.getScoreManager().saveScore("Anonymous");
+                if (LeaderboardPanel.isLeaderboardEnabled()) {
+                    // Prompt for player name before restarting
+                    // Use SwingUtilities.invokeLater to ensure dialog appears on EDT
+                    // Pass the game component as parent for proper focus and positioning
+                    String playerName = JOptionPane.showInputDialog(game, 
+                        "Enter your name for the leaderboard:", 
+                        "Player Name");
+                    if (playerName != null && !playerName.trim().isEmpty()) {
+                        game.getScoreManager().saveScore(playerName.trim());
+                    } else {
+                        // Save with default name if user cancels
+                        game.getScoreManager().saveScore("Anonymous");
+                    }
                 }
                 game.restartGame();
             });
