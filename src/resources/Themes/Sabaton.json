@@ -7,6 +7,8 @@
   "music": "/resources/Music/Sabaton.wav",
   "deathscreen": "/resources/Background/TankBattleground.jpg",
   "deathsound": "/resources/SoundEffects/player_death.wav",
+  "death_explosion": "/resources/SoundEffects/player_death.wav",
+  "deathsound_enabled": false,
   "death_skin": "/resources/Invader/TigerII-Invader.png",
   "death_skin_fade_out": true
 }

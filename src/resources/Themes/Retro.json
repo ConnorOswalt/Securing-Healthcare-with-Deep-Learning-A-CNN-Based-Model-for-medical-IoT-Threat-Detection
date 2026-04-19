@@ -6,7 +6,9 @@
   "background": "/resources/Background/Retro.gif",
   "music": "/resources/Music/Retro.wav",
   "deathscreen": "/resources/Background/Retro.gif",
-  "deathsound": "/resources/SoundEffects/player_death.wav",
+  "deathsound": "/resources/sfx/RetroDeath.wav",
+  "death_explosion": "/resources/sfx/8BitExplosion.wav",
+  "deathsound_enabled": true,
   "death_skin": "/resources/Invader/InvaderDeathSkins/retro.gif",
   "death_skin_fade_out": false
 }

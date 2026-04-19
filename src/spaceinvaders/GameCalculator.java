@@ -338,17 +338,17 @@ public class GameCalculator extends Thread {
         int centerX = invader.getX() + invader.getSize() / 2;
         int centerY = invader.getY() + invader.getSize() / 2;
 
+        String deathExplosionSound = game.getDeathExplosionSoundEffectPath();
+        if (deathExplosionSound != null && game.getMusicHandler() != null) {
+            game.getMusicHandler().playOneShotEffect(deathExplosionSound);
+        }
+
         // If a death skin is set, show the flash/fade effect instead of the normal explosion
         java.awt.Image deathSkin = game.imageSelection.getDeathSkinImage();
         if (deathSkin != null) {
             synchronized (game) {
                 game.deathEffects.add(new DeathEffect(invader.getX(), invader.getY(), invader.getSize(), deathSkin,
                         game.imageSelection.isDeathSkinFadeOutEnabled()));
-            }
-
-            // Big-head invaders do a bonus squeak (reuses available effect asset).
-            if (invader.getSize() >= 70 && game.getMusicHandler() != null) {
-                game.getMusicHandler().playOneShotEffect(game.getDefaultDeathSoundEffectPath());
             }
             return;
         }

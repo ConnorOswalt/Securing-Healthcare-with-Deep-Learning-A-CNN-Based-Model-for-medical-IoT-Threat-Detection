@@ -161,6 +161,16 @@ public class ThemeImplementation {
             game.setDeathSoundEffectPath(game.getDefaultDeathSoundEffectPath());
         }
 
+        String deathExplosionSoundPath = extractPath(jsonContent, "death_explosion");
+        if (deathExplosionSoundPath != null) {
+            game.setDeathExplosionSoundEffectPath(deathExplosionSoundPath);
+        } else {
+            game.clearDeathExplosionSoundEffectPath();
+        }
+
+        Boolean deathSoundEnabled = extractBoolean(jsonContent, "deathsound_enabled");
+        game.setDeathSoundEnabled(deathSoundEnabled == null || deathSoundEnabled);
+
         String musicPath = extractPath(jsonContent, "music");
         if (musicPath != null && game.getMusicHandler() != null) {
             if (game.isGameOver()) {

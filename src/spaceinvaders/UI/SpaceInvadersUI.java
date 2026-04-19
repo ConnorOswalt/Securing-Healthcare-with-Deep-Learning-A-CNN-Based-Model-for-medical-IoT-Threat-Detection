@@ -70,7 +70,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private static final long PLAYER_FLASH_DURATION = 300;
     private boolean gameOver = false;
     private boolean deathSoundPlayed = false;
+    private boolean deathSoundEnabled = true;
     private String deathSoundEffectPath = DEATH_SOUND_EFFECT_PATH;
+    private String deathExplosionSoundEffectPath;
     private long gameOverFlashStartTime = 0;
     private static final long GAME_OVER_FLASH_DURATION = 500; // Flash for 500ms after game over
     private boolean paused = false;
@@ -347,7 +349,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         if (restoreDefaultState) {
             imageSelection.restoreDefaultThemeState(this);
             currentThemePath = null;
+            setDeathSoundEnabled(true);
             setDeathSoundEffectPath(DEATH_SOUND_EFFECT_PATH);
+            clearDeathExplosionSoundEffectPath();
             if (musicHandler != null) {
                 musicHandler.resumeInterruptedTrack();
             }
@@ -440,8 +444,24 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         this.deathSoundEffectPath = deathSoundEffectPath;
     }
 
+    public void setDeathSoundEnabled(boolean deathSoundEnabled) {
+        this.deathSoundEnabled = deathSoundEnabled;
+    }
+
     public String getDefaultDeathSoundEffectPath() {
         return DEATH_SOUND_EFFECT_PATH;
+    }
+
+    public void setDeathExplosionSoundEffectPath(String deathExplosionSoundEffectPath) {
+        this.deathExplosionSoundEffectPath = deathExplosionSoundEffectPath;
+    }
+
+    public void clearDeathExplosionSoundEffectPath() {
+        this.deathExplosionSoundEffectPath = null;
+    }
+
+    public String getDeathExplosionSoundEffectPath() {
+        return deathExplosionSoundEffectPath;
     }
 
     public void handleRickRollKill() {
@@ -536,7 +556,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             }
             if (musicHandler != null) {
                 musicHandler.stopCurrentTrack();
-                if (!deathSoundPlayed) {
+                if (!deathSoundPlayed && deathSoundEnabled) {
                     musicHandler.playOneShotEffect(deathSoundEffectPath);
                     deathSoundPlayed = true;
                 }
