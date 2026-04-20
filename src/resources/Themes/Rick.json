@@ -3,7 +3,7 @@
   "invader": "/resources/Shooter/Rick_Dancing.gif",
   "bullet": "/resources/Shooter/Rick_Dancing.gif",
   "background": "/resources/Background/RickAstley.gif",
-  "music": "/resources/Music/RickAstley.mid",
+  "music": "/resources/Music/RickRoll.wav",
   "deathscreen": "/resources/Background/RickAstley.gif",
   "deathsound": "/resources/SoundEffects/player_death.wav",
   "deathsound_enabled": true

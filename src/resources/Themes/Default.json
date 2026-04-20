@@ -3,5 +3,5 @@
   "restore_defaults": true,
   "stars_background": true,
   "music_enabled": true,
-  "music": "/resources/Music/space_invaders.mid"
+  "music": "/resources/Music/Space_Invader_Default.wav",
 }

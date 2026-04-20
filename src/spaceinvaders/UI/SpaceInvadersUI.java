@@ -47,6 +47,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
     private static SpaceInvadersUI activeInstance;
     private static final String DEATH_SOUND_EFFECT_PATH = "/resources/SoundEffects/player_death.wav";
+    private static final String TITLE_SCREEN_MUSIC_PATH = "/resources/Music/Space_Invaders_Title.wav";
     private static final String RICK_THEME_PATH = "/resources/Themes/Rick.json";
     private static final String RICK_ROLL_MUSIC_PATH = "/resources/Music/NeverGonnaGiveYouUp.wav";
     private static final String RICK_ROLL_MUSIC_FALLBACK_PATH = "/resources/Music/Retro.wav";
@@ -167,6 +168,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
                 if (getWidth() > 0 && getHeight() > 0) {
                     // Apply Default theme first — sets stars background, no music
                     ThemeImplementation.requestThemeChange(SpaceInvadersUI.this, "/resources/Themes/Default.json");
+                    startTitleScreenMusic();
                     repaint();
                     requestFocusInWindow();
                     // Now that UI is initialized, start the game calculator thread
@@ -1202,8 +1204,27 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public void startGameFromStarterScreen() {
         gameStarted = true;
         paused = false;
+        if (musicHandler != null) {
+            if (currentThemeExpectedMusicPath != null && !currentThemeExpectedMusicPath.isBlank()) {
+                musicHandler.selectTrack(currentThemeExpectedMusicPath);
+            } else {
+                musicHandler.stopCurrentTrack();
+            }
+        }
         requestFocusInWindow();
         repaint();
+    }
+
+    private void startTitleScreenMusic() {
+        if (musicHandler == null) {
+            return;
+        }
+
+        if (SpaceInvadersUI.class.getResource(TITLE_SCREEN_MUSIC_PATH) == null) {
+            return;
+        }
+
+        musicHandler.selectTrack(TITLE_SCREEN_MUSIC_PATH);
     }
 
     private String resolveExistingResource(String preferredPath, String fallbackPath) {

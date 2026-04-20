@@ -3,6 +3,7 @@ package spaceinvaders.DataHandlers;
 import spaceinvaders.GameExceptions;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Locale;
@@ -14,6 +15,7 @@ import javax.sound.midi.MidiChannel;
 import javax.sound.midi.MidiSystem;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Sequencer;
+import javax.sound.midi.Soundbank;
 import javax.sound.midi.Synthesizer;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
@@ -48,7 +50,7 @@ public class MusicHandler extends Thread {
     private Sequencer midiSequencer;
     private Synthesizer midiSynthesizer;
     private String currentTrackResourcePath;
-    private boolean currentTrackIsMidi = false;
+    private String midiSoundfontResourcePath;
     private String interruptedTrackResourcePath;
     private long interruptedTrackPositionUs = 0;
     private final Map<String, Long> trackResumePositionsUs = new HashMap<>();
@@ -266,6 +268,15 @@ public class MusicHandler extends Thread {
         return volumePercent;
     }
 
+    public synchronized void setMidiSoundfontResourcePath(String resourcePath) {
+        if (resourcePath == null || resourcePath.isBlank()) {
+            midiSoundfontResourcePath = null;
+            return;
+        }
+
+        midiSoundfontResourcePath = resourcePath;
+    }
+
     private void playTrack(String resourcePath, boolean randomStart, long minimumRemainingMs,
             boolean explicitStartPosition, long startPositionUs, boolean useSavedPosition) {
         saveCurrentTrackPosition();
@@ -300,7 +311,6 @@ public class MusicHandler extends Thread {
                 newClip.start();
             }
             clip = newClip;
-            currentTrackIsMidi = false;
             currentTrackResourcePath = resourcePath;
         } catch (UnsupportedAudioFileException | LineUnavailableException | java.io.IOException e) {
             GameExceptions.handleWithDialog("Failed to play music track", e);
@@ -326,6 +336,11 @@ public class MusicHandler extends Thread {
             synthesizer.open();
             sequencer.open();
             sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());
+
+            // Optional custom soundfont for retro/chiptune instruments.
+            // If loading fails, playback continues using the default synth soundbank.
+            tryLoadMidiSoundfont(synthesizer);
+
             sequencer.setSequence(trackUrl.openStream());
 
             if (explicitStartPosition) {
@@ -340,7 +355,6 @@ public class MusicHandler extends Thread {
             midiSequencer = sequencer;
             midiSynthesizer = synthesizer;
             currentTrackResourcePath = resourcePath;
-            currentTrackIsMidi = true;
             applyVolumeToCurrentTrack();
             if (!muted) {
                 sequencer.start();
@@ -453,7 +467,38 @@ public class MusicHandler extends Thread {
         closeClip();
         closeMidiTrack();
         currentTrackResourcePath = null;
-        currentTrackIsMidi = false;
+    }
+
+    private void tryLoadMidiSoundfont(Synthesizer synthesizer) {
+        String soundfontPath;
+        synchronized (this) {
+            soundfontPath = midiSoundfontResourcePath;
+        }
+
+        if (soundfontPath == null || soundfontPath.isBlank()) {
+            return;
+        }
+
+        URL soundfontUrl = MusicHandler.class.getResource(soundfontPath);
+        if (soundfontUrl == null) {
+            return;
+        }
+
+        try (InputStream inputStream = soundfontUrl.openStream()) {
+            Soundbank soundbank = MidiSystem.getSoundbank(inputStream);
+            if (soundbank == null) {
+                return;
+            }
+
+            Soundbank defaultSoundbank = synthesizer.getDefaultSoundbank();
+            if (defaultSoundbank != null) {
+                synthesizer.unloadAllInstruments(defaultSoundbank);
+            }
+
+            synthesizer.loadAllInstruments(soundbank);
+        } catch (InvalidMidiDataException | IOException e) {
+            // Silent fallback: keep default synthesizer sounds.
+        }
     }
 
     private void closeMidiTrack() {

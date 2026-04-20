@@ -191,14 +191,18 @@ public class ThemeImplementation {
 
         Boolean musicEnabled = extractBoolean(jsonContent, "music_enabled");
         String musicPath = extractPath(jsonContent, "music");
+        String midiSoundfontPath = extractOptionalPath(jsonContent, "midi_soundfont");
         if (game.getMusicHandler() != null) {
+            game.getMusicHandler().setMidiSoundfontResourcePath(midiSoundfontPath);
             if (Boolean.FALSE.equals(musicEnabled)) {
-                game.getMusicHandler().clearInterruptedTrack();
-                game.getMusicHandler().stopCurrentTrack();
                 game.setCurrentThemeExpectedMusicPath(null);
+                if (game.hasGameStarted()) {
+                    game.getMusicHandler().clearInterruptedTrack();
+                    game.getMusicHandler().stopCurrentTrack();
+                }
             } else if (musicPath != null) {
                 game.setCurrentThemeExpectedMusicPath(musicPath);
-                if (game.isGameOver()) {
+                if (!game.hasGameStarted() || game.isGameOver()) {
                     game.getMusicHandler().queueTrackWithoutPlaying(musicPath);
                 } else if (game.consumePendingRandomRickSnippet()) {
                     game.getMusicHandler().startTemporaryOverrideFromRandomPosition(musicPath,
@@ -239,6 +243,22 @@ public class ThemeImplementation {
             GameExceptions.showErrorDialog("Theme resource missing for key '" + key + "': " + normalized);
             return null;
         }
+        return normalized;
+    }
+
+    private static String extractOptionalPath(String jsonContent, String key) {
+        String quotedKey = Pattern.quote(key);
+        Pattern pattern = Pattern.compile(String.format(STRING_FIELD_PATTERN_TEMPLATE.pattern(), quotedKey));
+        Matcher matcher = pattern.matcher(jsonContent);
+        if (!matcher.find()) {
+            return null;
+        }
+
+        String normalized = normalizeResourcePath(matcher.group(1));
+        if (ThemeImplementation.class.getResource(normalized) == null) {
+            return null;
+        }
+
         return normalized;
     }
 
