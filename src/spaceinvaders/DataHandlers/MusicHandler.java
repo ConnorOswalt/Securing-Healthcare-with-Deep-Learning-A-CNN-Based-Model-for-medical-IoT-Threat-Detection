@@ -5,9 +5,16 @@ import spaceinvaders.GameExceptions;
 import java.io.IOException;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import javax.sound.midi.InvalidMidiDataException;
+import javax.sound.midi.MidiChannel;
+import javax.sound.midi.MidiSystem;
+import javax.sound.midi.MidiUnavailableException;
+import javax.sound.midi.Sequencer;
+import javax.sound.midi.Synthesizer;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -38,7 +45,10 @@ public class MusicHandler extends Thread {
     private long pendingStartPositionUs = 0;
     private boolean pendingUseSavedPosition = false;
     private Clip clip;
+    private Sequencer midiSequencer;
+    private Synthesizer midiSynthesizer;
     private String currentTrackResourcePath;
+    private boolean currentTrackIsMidi = false;
     private String interruptedTrackResourcePath;
     private long interruptedTrackPositionUs = 0;
     private final Map<String, Long> trackResumePositionsUs = new HashMap<>();
@@ -92,7 +102,7 @@ public class MusicHandler extends Thread {
                     useSavedPosition);
         }
 
-        closeClip();
+        closeCurrentTrack();
     }
 
     public synchronized void selectTrack(String resourcePath) {
@@ -149,7 +159,9 @@ public class MusicHandler extends Thread {
         if (resourcePath == null || resourcePath.isBlank()) {
             return false;
         }
-        return clip != null && currentTrackResourcePath != null && currentTrackResourcePath.equals(resourcePath);
+        return currentTrackResourcePath != null
+                && currentTrackResourcePath.equals(resourcePath)
+                && (clip != null || midiSequencer != null);
     }
 
     public synchronized void stopThread() {
@@ -160,7 +172,7 @@ public class MusicHandler extends Thread {
 
     public synchronized void stopCurrentTrack() {
         saveCurrentTrackPosition();
-        closeClip();
+        closeCurrentTrack();
     }
 
     public synchronized void resumeTrack() {
@@ -212,6 +224,16 @@ public class MusicHandler extends Thread {
         this.muted = muted;
 
         if (clip == null) {
+            if (midiSequencer != null) {
+                if (muted) {
+                    if (midiSequencer.isRunning()) {
+                        midiSequencer.stop();
+                    }
+                } else if (!midiSequencer.isRunning()) {
+                    midiSequencer.start();
+                }
+                applyVolumeToCurrentTrack();
+            }
             return;
         }
 
@@ -237,7 +259,7 @@ public class MusicHandler extends Thread {
 
     public synchronized void setVolumePercent(int volumePercent) {
         this.volumePercent = Math.max(0, Math.min(100, volumePercent));
-        applyVolumeToCurrentClip();
+        applyVolumeToCurrentTrack();
     }
 
     public synchronized int getVolumePercent() {
@@ -247,7 +269,13 @@ public class MusicHandler extends Thread {
     private void playTrack(String resourcePath, boolean randomStart, long minimumRemainingMs,
             boolean explicitStartPosition, long startPositionUs, boolean useSavedPosition) {
         saveCurrentTrackPosition();
-        closeClip();
+        closeCurrentTrack();
+
+        if (isMidiResource(resourcePath)) {
+            playMidiTrack(resourcePath, randomStart, minimumRemainingMs, explicitStartPosition, startPositionUs,
+                    useSavedPosition);
+            return;
+        }
 
         URL trackUrl = MusicHandler.class.getResource(resourcePath);
         if (trackUrl == null) {
@@ -272,15 +300,65 @@ public class MusicHandler extends Thread {
                 newClip.start();
             }
             clip = newClip;
+            currentTrackIsMidi = false;
             currentTrackResourcePath = resourcePath;
         } catch (UnsupportedAudioFileException | LineUnavailableException | java.io.IOException e) {
             GameExceptions.handleWithDialog("Failed to play music track", e);
         }
     }
 
+    private void playMidiTrack(String resourcePath, boolean randomStart, long minimumRemainingMs,
+            boolean explicitStartPosition, long startPositionUs, boolean useSavedPosition) {
+        URL trackUrl = MusicHandler.class.getResource(resourcePath);
+        if (trackUrl == null) {
+            GameExceptions.showErrorDialog("MIDI track not found: " + resourcePath);
+            return;
+        }
+
+        try {
+            Sequencer sequencer = MidiSystem.getSequencer(false);
+            if (sequencer == null) {
+                GameExceptions.showErrorDialog("No MIDI sequencer available on this system.");
+                return;
+            }
+
+            Synthesizer synthesizer = MidiSystem.getSynthesizer();
+            synthesizer.open();
+            sequencer.open();
+            sequencer.getTransmitter().setReceiver(synthesizer.getReceiver());
+            sequencer.setSequence(trackUrl.openStream());
+
+            if (explicitStartPosition) {
+                applyExplicitStartPosition(sequencer, startPositionUs);
+            } else if (randomStart) {
+                applyRandomStartPosition(sequencer, minimumRemainingMs);
+            } else if (useSavedPosition) {
+                applySavedStartPosition(resourcePath, sequencer);
+            }
+
+            sequencer.setLoopCount(Sequencer.LOOP_CONTINUOUSLY);
+            midiSequencer = sequencer;
+            midiSynthesizer = synthesizer;
+            currentTrackResourcePath = resourcePath;
+            currentTrackIsMidi = true;
+            applyVolumeToCurrentTrack();
+            if (!muted) {
+                sequencer.start();
+            }
+        } catch (MidiUnavailableException | InvalidMidiDataException | IOException e) {
+            GameExceptions.handleWithDialog("Failed to play MIDI track", e);
+            closeMidiTrack();
+        }
+    }
+
     private void applyExplicitStartPosition(Clip targetClip, long startPositionUs) {
         long boundedStart = Math.max(0, Math.min(startPositionUs, targetClip.getMicrosecondLength()));
         targetClip.setMicrosecondPosition(boundedStart);
+    }
+
+    private void applyExplicitStartPosition(Sequencer sequencer, long startPositionUs) {
+        long boundedStart = Math.max(0, Math.min(startPositionUs, sequencer.getMicrosecondLength()));
+        sequencer.setMicrosecondPosition(boundedStart);
     }
 
     private synchronized void applySavedStartPosition(String resourcePath, Clip targetClip) {
@@ -290,6 +368,15 @@ public class MusicHandler extends Thread {
         }
 
         applyExplicitStartPosition(targetClip, savedPositionUs);
+    }
+
+    private synchronized void applySavedStartPosition(String resourcePath, Sequencer sequencer) {
+        Long savedPositionUs = trackResumePositionsUs.get(resourcePath);
+        if (savedPositionUs == null) {
+            return;
+        }
+
+        applyExplicitStartPosition(sequencer, savedPositionUs);
     }
 
     private void applyRandomStartPosition(Clip targetClip, long minimumRemainingMs) {
@@ -305,9 +392,25 @@ public class MusicHandler extends Thread {
         targetClip.setMicrosecondPosition(randomStartUs);
     }
 
-    private synchronized void applyVolumeToCurrentClip() {
+    private void applyRandomStartPosition(Sequencer sequencer, long minimumRemainingMs) {
+        long trackLengthUs = sequencer.getMicrosecondLength();
+        long minimumRemainingUs = minimumRemainingMs * 1000L;
+        long maxStartUs = trackLengthUs - minimumRemainingUs;
+        if (maxStartUs <= 0) {
+            sequencer.setMicrosecondPosition(0);
+            return;
+        }
+
+        long randomStartUs = (long) (Math.random() * maxStartUs);
+        sequencer.setMicrosecondPosition(randomStartUs);
+    }
+
+    private synchronized void applyVolumeToCurrentTrack() {
         if (clip != null) {
             applyVolumeToClip(clip);
+        }
+        if (midiSynthesizer != null && midiSynthesizer.isOpen()) {
+            applyVolumeToMidiSynth(midiSynthesizer);
         }
     }
 
@@ -346,19 +449,68 @@ public class MusicHandler extends Thread {
         }
     }
 
-    private synchronized void saveCurrentTrackPosition() {
-        if (clip == null || currentTrackResourcePath == null || currentTrackResourcePath.isBlank()) {
+    private void closeCurrentTrack() {
+        closeClip();
+        closeMidiTrack();
+        currentTrackResourcePath = null;
+        currentTrackIsMidi = false;
+    }
+
+    private void closeMidiTrack() {
+        if (midiSequencer != null) {
+            if (midiSequencer.isRunning()) {
+                midiSequencer.stop();
+            }
+            midiSequencer.close();
+            midiSequencer = null;
+        }
+
+        if (midiSynthesizer != null) {
+            midiSynthesizer.close();
+            midiSynthesizer = null;
+        }
+    }
+
+    private void applyVolumeToMidiSynth(Synthesizer synthesizer) {
+        int channelVolume = muted ? 0 : Math.max(0, Math.min(127, Math.round((volumePercent / 100.0f) * 127)));
+        MidiChannel[] channels = synthesizer.getChannels();
+        if (channels == null) {
             return;
         }
 
-        trackResumePositionsUs.put(currentTrackResourcePath, clip.getMicrosecondPosition());
+        for (MidiChannel channel : channels) {
+            if (channel != null) {
+                channel.controlChange(7, channelVolume); // CC 7 = Channel Volume
+            }
+        }
+    }
+
+    private synchronized void saveCurrentTrackPosition() {
+        if (currentTrackResourcePath == null || currentTrackResourcePath.isBlank()) {
+            return;
+        }
+
+        if (clip != null) {
+            trackResumePositionsUs.put(currentTrackResourcePath, clip.getMicrosecondPosition());
+            return;
+        }
+
+        if (midiSequencer != null) {
+            trackResumePositionsUs.put(currentTrackResourcePath, midiSequencer.getMicrosecondPosition());
+        }
     }
 
     private void saveInterruptedTrackState() {
-        if (clip != null && currentTrackResourcePath != null && !currentTrackResourcePath.isBlank()) {
+        if (currentTrackResourcePath != null && !currentTrackResourcePath.isBlank()) {
             interruptedTrackResourcePath = currentTrackResourcePath;
-            interruptedTrackPositionUs = clip.getMicrosecondPosition();
-            return;
+            if (clip != null) {
+                interruptedTrackPositionUs = clip.getMicrosecondPosition();
+                return;
+            }
+            if (midiSequencer != null) {
+                interruptedTrackPositionUs = midiSequencer.getMicrosecondPosition();
+                return;
+            }
         }
 
         if (pendingTrackResourcePath != null && !pendingTrackResourcePath.isBlank()) {
@@ -438,5 +590,13 @@ public class MusicHandler extends Thread {
         } catch (UnsupportedAudioFileException | LineUnavailableException | IOException e) {
             GameExceptions.handleWithDialog("Failed to play sound effect", e);
         }
+    }
+
+    private boolean isMidiResource(String resourcePath) {
+        if (resourcePath == null) {
+            return false;
+        }
+        String normalized = resourcePath.toLowerCase(Locale.ROOT);
+        return normalized.endsWith(".mid") || normalized.endsWith(".midi");
     }
 }

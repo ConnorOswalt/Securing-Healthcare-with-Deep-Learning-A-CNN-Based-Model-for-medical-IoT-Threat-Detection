@@ -92,6 +92,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private long gameOverFlashStartTime = 0;
     private static final long GAME_OVER_FLASH_DURATION = 500; // Flash for 500ms after game over
     private boolean paused = false;
+    private boolean gameStarted = false;
     private boolean sillinessModeEnabled = true;
     private SillyModifier activeSillyModifier = SillyModifier.NONE;
     private long activeModifierUntilMs = 0;
@@ -167,6 +168,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
                     // Apply Default theme first — sets stars background, no music
                     ThemeImplementation.requestThemeChange(SpaceInvadersUI.this, "/resources/Themes/Default.json");
                     repaint();
+                    requestFocusInWindow();
                     // Now that UI is initialized, start the game calculator thread
                     gameCalculator = new GameCalculator(SpaceInvadersUI.this);
                     gameCalculator.start();
@@ -227,6 +229,12 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         if (gameOver) {
             drawGameOver(g);
+            g2d.setTransform(originalTransform);
+            return;
+        }
+
+        if (!gameStarted) {
+            drawStarterScreen(g);
             g2d.setTransform(originalTransform);
             return;
         }
@@ -841,6 +849,106 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         g.drawString(pauseText, (getWidth() - textWidth) / 2, (getHeight() + textHeight) / 2);
     }
 
+    private void drawStarterScreen(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+
+        g2d.setColor(new Color(0, 0, 0, 145));
+        g2d.fillRect(0, 0, getWidth(), getHeight());
+
+        int panelWidth = Math.min(520, getWidth() - 40);
+        int panelHeight = Math.min(340, getHeight() - 80);
+        int panelX = (getWidth() - panelWidth) / 2;
+        int panelY = (getHeight() - panelHeight) / 2;
+
+        g2d.setColor(new Color(15, 18, 28, 225));
+        g2d.fillRoundRect(panelX, panelY, panelWidth, panelHeight, 24, 24);
+        g2d.setColor(new Color(120, 210, 255, 120));
+        g2d.drawRoundRect(panelX, panelY, panelWidth, panelHeight, 24, 24);
+
+        long now = System.currentTimeMillis();
+        float glowPulse = 0.72f + 0.38f * (float) Math.sin(now * 0.006);
+
+        g2d.setFont(new Font("Arial", Font.BOLD, 44));
+        String title = "SPACE INVADERS";
+        FontMetrics titleMetrics = g2d.getFontMetrics();
+        int titleX = panelX + (panelWidth - titleMetrics.stringWidth(title)) / 2;
+        int titleY = panelY + 82;
+
+        // Deep 3D extrusion layers (drawn per character for cleaner depth edges)
+        int titleDepth = 14;
+        for (int depth = titleDepth; depth >= 1; depth--) {
+            int shade = Math.max(14, 120 - depth * 6);
+            g2d.setColor(new Color(8, shade, 170, 195));
+            int xOffset = titleX;
+            for (int i = 0; i < title.length(); i++) {
+                char c = title.charAt(i);
+                g2d.drawString(String.valueOf(c), xOffset + depth, titleY + depth);
+                xOffset += titleMetrics.charWidth(c);
+            }
+        }
+
+        // Stronger outer glow passes
+        int glowAlpha = (int) (95 + 105 * glowPulse);
+        for (int radius = 10; radius >= 2; radius--) {
+            int alphaScale = Math.max(26, glowAlpha - radius * 12);
+            g2d.setColor(new Color(40, 180, 255, alphaScale));
+            g2d.drawString(title, titleX - radius, titleY);
+            g2d.drawString(title, titleX + radius, titleY);
+            g2d.drawString(title, titleX, titleY - radius);
+            g2d.drawString(title, titleX, titleY + radius);
+
+            g2d.setColor(new Color(90, 245, 255, Math.max(20, alphaScale - 10)));
+            g2d.drawString(title, titleX - radius, titleY - radius / 2);
+            g2d.drawString(title, titleX + radius, titleY + radius / 2);
+        }
+
+        // Character shadows and face pass
+        int xOffset = titleX;
+        for (int i = 0; i < title.length(); i++) {
+            char c = title.charAt(i);
+            String letter = String.valueOf(c);
+
+            // Per-character layered shadows
+            g2d.setColor(new Color(0, 0, 0, 185));
+            g2d.drawString(letter, xOffset + 4, titleY + 5);
+            g2d.setColor(new Color(0, 0, 0, 105));
+            g2d.drawString(letter, xOffset + 7, titleY + 8);
+
+            // Main title face
+            g2d.setColor(new Color(110, 240, 255));
+            g2d.drawString(letter, xOffset, titleY);
+
+            // Crisp highlight bevel
+            g2d.setColor(new Color(235, 255, 255, 205));
+            g2d.drawString(letter, xOffset - 1, titleY - 1);
+
+            xOffset += titleMetrics.charWidth(c);
+        }
+
+        g2d.setFont(new Font("Arial", Font.PLAIN, 20));
+        g2d.setColor(new Color(240, 240, 240));
+        String subtitle = "Defend the planet. Survive the chaos.";
+        FontMetrics subtitleMetrics = g2d.getFontMetrics();
+        int subtitleX = panelX + (panelWidth - subtitleMetrics.stringWidth(subtitle)) / 2;
+        g2d.drawString(subtitle, subtitleX, panelY + 125);
+
+        g2d.setFont(new Font("Arial", Font.BOLD, 24));
+        String startText = "Press ENTER or SPACE to start";
+        FontMetrics startMetrics = g2d.getFontMetrics();
+        int startX = panelX + (panelWidth - startMetrics.stringWidth(startText)) / 2;
+        int startY = panelY + panelHeight - 92;
+        g2d.setColor(new Color(255, 220, 90));
+        g2d.drawString(startText, startX, startY);
+
+        g2d.setFont(new Font("Arial", Font.PLAIN, 16));
+        String controls = "Move: LEFT/RIGHT    Fire: SPACE    Pause: P";
+        FontMetrics controlsMetrics = g2d.getFontMetrics();
+        int controlsX = panelX + (panelWidth - controlsMetrics.stringWidth(controls)) / 2;
+        g2d.setColor(new Color(190, 215, 255));
+        g2d.drawString(controls, controlsX, panelY + panelHeight - 52);
+    }
+
     private void drawGameOver(Graphics g) {
         Image deathScreenImage = imageSelection.getDeathScreenImage();
         if (deathScreenImage != null) {
@@ -930,6 +1038,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             laserBeamX = -1;
             laserBeamUntilMs = 0;
             gameOver = false;
+            gameStarted = true;
             deathSoundPlayed = false;
             gameOverFlashStartTime = 0; // Reset game over flash timer
             if (musicHandler != null) {
@@ -1084,6 +1193,17 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         if (musicHandler != null && musicHandler.isAlive()) {
             musicHandler.stopThread();
         }
+    }
+
+    public boolean hasGameStarted() {
+        return gameStarted;
+    }
+
+    public void startGameFromStarterScreen() {
+        gameStarted = true;
+        paused = false;
+        requestFocusInWindow();
+        repaint();
     }
 
     private String resolveExistingResource(String preferredPath, String fallbackPath) {

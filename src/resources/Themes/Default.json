@@ -2,6 +2,6 @@
   "name": "Default",
   "restore_defaults": true,
   "stars_background": true,
-  "music_enabled": false,
-  "music": "/resources/Music/Default.wav"
+  "music_enabled": true,
+  "music": "/resources/Music/space_invaders.mid"
 }

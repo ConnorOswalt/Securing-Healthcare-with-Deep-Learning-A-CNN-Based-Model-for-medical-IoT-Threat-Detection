@@ -76,6 +76,10 @@ public class GameCalculator extends Thread {
         game.updateTemporaryRickThemeRestore();
         game.updateScreenShake();
 
+        if (!game.hasGameStarted()) {
+            return;
+        }
+
         // Skip game updates if paused
         if (game.isPaused()) {
             return;

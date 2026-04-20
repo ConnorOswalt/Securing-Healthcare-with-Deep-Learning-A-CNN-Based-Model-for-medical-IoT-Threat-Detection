@@ -33,6 +33,14 @@ public class ListenerActions {
 
     public void keyPressed(KeyEvent e, SpaceInvadersUI game) {
         int key = e.getKeyCode();
+
+        if (!game.hasGameStarted()) {
+            if (key == KeyEvent.VK_ENTER || key == KeyEvent.VK_SPACE) {
+                game.startGameFromStarterScreen();
+            }
+            return;
+        }
+
         boolean mirror = game.isMirrorControlsActive();
         if (key == KeyEvent.VK_LEFT) {
             if (mirror) {
