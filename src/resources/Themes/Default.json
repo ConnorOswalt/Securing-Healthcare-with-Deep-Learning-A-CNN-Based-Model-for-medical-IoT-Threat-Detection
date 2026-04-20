@@ -4,4 +4,5 @@
   "stars_background": true,
   "music_enabled": true,
   "music": "/resources/Music/Space_Invader_Default.wav",
+  "death_explosion": "/resources/sfx/RetroDeath.wav"
 }

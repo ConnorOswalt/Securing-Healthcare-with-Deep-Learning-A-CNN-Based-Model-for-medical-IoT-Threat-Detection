@@ -1178,8 +1178,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         ThemeCycleEntry nextEntry;
         synchronized (this) {
             nextEntry = themeProgressionQueue.peekFirst();
-            if (nextEntry != null && nextEntry.themePath != null
-                    && nextEntry.themePath.equals(defeatedBoss.getThemePath())) {
+            if (nextEntry != null
+                    && ((nextEntry.themePath == null && defeatedBoss.getThemePath() == null)
+                    || (nextEntry.themePath != null && nextEntry.themePath.equals(defeatedBoss.getThemePath())))) {
                 themeProgressionQueue.removeFirst();
             }
         }

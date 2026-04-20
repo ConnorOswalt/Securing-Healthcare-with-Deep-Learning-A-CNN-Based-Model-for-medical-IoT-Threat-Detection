@@ -4,5 +4,8 @@
   "invader": "/resources/Invader/imp-walk-imp-chase.gif",
   "bullet": "/resources/Bullet/bullet.gif",
   "background": "/resources/Background/doom.jpg",
+  "deathsound": "/resources/sfx/doomDeath.wav",
+    "deathsound_enabled": true,
+    "death_explosion": "/resources/sfx/doomDeath.wav",
   "music": "/resources/Music/Doom.wav"
 }
