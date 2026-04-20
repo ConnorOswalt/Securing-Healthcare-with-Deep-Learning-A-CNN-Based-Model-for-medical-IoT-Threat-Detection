@@ -22,10 +22,12 @@ import org.w3c.dom.Node;
 public class ImageSelection {
     private static final String RICK_INVADER_IMAGE_PATH = "/resources/Shooter/Rick.png";
     private static final String LASER_BEAM_IMAGE_PATH = "/resources/sfx/LAZER.gif";
+    private static final String BOSS_IMAGE_PATH = "/resources/Invader/Boss.png";
     private Image shooterImage;
     private Image invaderImage;
     private Image rickInvaderImage;
     private Image laserBeamImage;
+    private Image bossImage;
     private Image bulletImage;
     private List<BufferedImage> bulletGifFrames = Collections.emptyList();
     private long[] bulletGifFrameEndTimesMs = new long[0];
@@ -58,6 +60,13 @@ public class ImageSelection {
             laserBeamImage = loadImageIfPresent(LASER_BEAM_IMAGE_PATH);
         }
         return laserBeamImage;
+    }
+
+    public Image getBossImage() {
+        if (bossImage == null) {
+            bossImage = loadImageIfPresent(BOSS_IMAGE_PATH);
+        }
+        return bossImage;
     }
 
     public Image getBulletImage() {

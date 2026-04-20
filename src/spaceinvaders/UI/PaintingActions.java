@@ -4,6 +4,7 @@ import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.DeathEffect;
 import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
+import spaceinvaders.characters.Boss;
 import spaceinvaders.characters.PowerUp;
 
 import java.awt.*;
@@ -26,6 +27,13 @@ public class PaintingActions {
         g.setColor(Color.BLACK);
         g.fillRect(0, 0, game.getWidth(), game.getHeight());
 
+        // Zoom background by 10% to cover screen shake offset and prevent white edges from showing
+        double zoomFactor = 1.10;
+        int zoomedWidth = (int)(game.getWidth() * zoomFactor);
+        int zoomedHeight = (int)(game.getHeight() * zoomFactor);
+        int offsetX = (int)((zoomedWidth - game.getWidth()) / 2.0);
+        int offsetY = (int)((zoomedHeight - game.getHeight()) / 2.0);
+
         if (game.imageSelection.isStarsBackgroundEnabled()) {
             g.setColor(Color.WHITE);
             for (Point star : game.imageSelection.getStarsSnapshot()) {
@@ -36,7 +44,7 @@ public class PaintingActions {
 
         Image backgroundImage = game.imageSelection.getBackgroundImage();
         if (backgroundImage != null) {
-            g.drawImage(backgroundImage, 0, 0, game.getWidth(), game.getHeight(), game);
+            g.drawImage(backgroundImage, -offsetX, -offsetY, zoomedWidth, zoomedHeight, game);
         }
     }
 
@@ -262,5 +270,47 @@ public class PaintingActions {
         float frac = Math.min(1f, remaining / 8000f);
         g2d.setColor(new Color(80, 200, 255));
         g2d.fillRoundRect(bx, by, (int)(barW * frac), barH, 4, 4);
+    }
+
+    public void drawBosses(Graphics g, SpaceInvadersUI game, Image bossImage) {
+        // Create a safe copy of the bosses list
+        List<Boss> bossesCopy;
+        synchronized (game) {
+            bossesCopy = new ArrayList<>(game.bosses);
+        }
+
+        Graphics2D g2d = (Graphics2D) g;
+        for (Boss boss : bossesCopy) {
+            if (bossImage != null) {
+                g2d.drawImage(bossImage, boss.getX(), boss.getY(), boss.getSize(), boss.getSize(), game);
+            } else {
+                // Fallback: Draw a red rectangle with health bar
+                g2d.setColor(new Color(255, 100, 100));
+                g2d.fillRect(boss.getX(), boss.getY(), boss.getSize(), boss.getSize());
+                g2d.setColor(new Color(255, 200, 200));
+                g2d.setStroke(new BasicStroke(3));
+                g2d.drawRect(boss.getX(), boss.getY(), boss.getSize(), boss.getSize());
+            }
+
+            // Draw health bar above boss
+            int healthBarWidth = boss.getSize();
+            int healthBarHeight = 6;
+            int healthBarX = boss.getX();
+            int healthBarY = boss.getY() - 12;
+
+            g2d.setColor(new Color(50, 50, 50, 200));
+            g2d.fillRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+
+            float healthRatio = boss.getHealthRatio();
+            Color healthColor = healthRatio > 0.5f ? new Color(80, 220, 110) : 
+                               healthRatio > 0.25f ? new Color(255, 190, 70) : 
+                               new Color(255, 85, 85);
+            g2d.setColor(healthColor);
+            g2d.fillRect(healthBarX, healthBarY, (int)(healthBarWidth * healthRatio), healthBarHeight);
+
+            g2d.setColor(new Color(255, 255, 255, 100));
+            g2d.setStroke(new BasicStroke(1));
+            g2d.drawRect(healthBarX, healthBarY, healthBarWidth, healthBarHeight);
+        }
     }
 }

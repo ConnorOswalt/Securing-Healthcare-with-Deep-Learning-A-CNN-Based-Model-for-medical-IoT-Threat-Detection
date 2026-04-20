@@ -5,6 +5,7 @@ import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.DeathEffect;
 import spaceinvaders.characters.Explosion;
 import spaceinvaders.characters.Invader;
+import spaceinvaders.characters.Boss;
 import spaceinvaders.characters.PowerUp;
 
 import java.awt.*;
@@ -73,6 +74,7 @@ public class GameCalculator extends Thread {
 
     private void updateGameState() {
         game.updateTemporaryRickThemeRestore();
+        game.updateScreenShake();
 
         // Skip game updates if paused
         if (game.isPaused()) {
@@ -83,8 +85,10 @@ public class GameCalculator extends Thread {
         updateShooterPosition();
         handleShooting();
         updateInvaderPositions();
+        updateBossPositions();
         updateBulletPositions();
         checkCollisions();
+        checkBossCollisions();
         updateExplosions();
         updateDeathEffects();
         spawnNewInvaders();
@@ -240,7 +244,7 @@ public class GameCalculator extends Thread {
                 addExplosionForInvader(inv);
                 it.remove();
                 game.recordInvaderDefeatCombo();
-                game.healPlayerFromInvaderKill();
+                game.recordInvaderKill(); // New: triggers difficulty scaling, boss spawning, screen shake
                 int points = game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.TINY_PANIC ? 20 : 10;
                 game.addPoints(points);
             }
@@ -265,7 +269,9 @@ public class GameCalculator extends Thread {
 
     private void spawnNewInvaders() {
         synchronized (game) {
-            if (game.random.nextInt(100) < 5) {
+            // Difficulty multiplier increases spawn chance over time
+            double spawnChance = 5 * game.getDifficultyMultiplier();
+            if (game.random.nextInt(100) < spawnChance) {
                 int x = game.random.nextInt(game.getWidth());
                 boolean isRickInvader = game.random.nextInt(100) < RICK_INVADER_CHANCE_PERCENT;
                 spawnCounter++;
@@ -280,7 +286,11 @@ public class GameCalculator extends Thread {
                     baseSize = Math.max(baseSize, 72);
                 }
 
-                game.invaders.add(new Invader(x, 0, baseSize, isRickInvader));
+                // Calculate speed based on difficulty (scales from 2 to 5 pixels/update)
+                int baseSpeed = 2;
+                int difficultySpeed = (int) (baseSpeed + (game.getDifficultyMultiplier() - 1.0) * 3);
+                Invader invader = new Invader(x, 0, baseSize, isRickInvader, difficultySpeed);
+                game.invaders.add(invader);
             }
         }
     }
@@ -291,11 +301,11 @@ public class GameCalculator extends Thread {
             while (invaderIterator.hasNext()) {
                 Invader invader = invaderIterator.next();
                 int y = invader.getY();
-                int step = 2;
+                int step = invader.getSpeed();
                 if (game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.MOON_GRAVITY) {
-                    step = 1;
+                    step = Math.max(1, step / 2);
                 } else if (game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.ZOOMIES) {
-                    step = 4;
+                    step = step * 2;
                 }
 
                 invader.setY(y + step);
@@ -355,13 +365,16 @@ public class GameCalculator extends Thread {
                         }
                         invaderIterator.remove();
                         game.recordInvaderDefeatCombo();
-                        game.healPlayerFromInvaderKill();
+                        game.recordInvaderKill(); // New: triggers difficulty scaling, boss spawning, screen shake
                         int points = game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.TINY_PANIC ? 20 : 10;
                         game.addPoints(points);
                         if (!bullet.isPiercing()) break;
                     }
                 }
             }
+
+            // Check laser beam kills
+            // (laser collision handled in fireLaserBeam, but we should also track kills there)
 
             // Check shooter-invader collisions
             if (!game.isGameOver()) {
@@ -381,6 +394,7 @@ public class GameCalculator extends Thread {
                         addExplosionForInvader(invader);
                         invaderIterator.remove();
                         game.damagePlayer();
+                        game.triggerScreenShake(100, 6); // Screen shake on hit
                         break; // Only one collision per frame
                     }
                 }
@@ -414,6 +428,105 @@ public class GameCalculator extends Thread {
         int maxRadius = Math.max(12, invader.getSize());
         synchronized (game) {
             game.explosions.add(new Explosion(centerX, centerY, maxRadius, EXPLOSION_DURATION_MS));
+        }
+    }
+
+    private void updateBossPositions() {
+        synchronized (game) {
+            Iterator<Boss> bossIterator = game.bosses.iterator();
+            while (bossIterator.hasNext()) {
+                Boss boss = bossIterator.next();
+                int y = boss.getY();
+                int step = 2; // Bosses move slower than regular invaders
+                boss.setY(y + step);
+                if (boss.getY() > game.getHeight()) {
+                    bossIterator.remove();
+                }
+            }
+        }
+    }
+
+    private void checkBossCollisions() {
+        synchronized (game) {
+            // Check bullet-boss collisions
+            Iterator<Bullet> bulletIterator = game.bullets.iterator();
+            while (bulletIterator.hasNext()) {
+                Bullet bullet = bulletIterator.next();
+                Iterator<Boss> bossIterator = game.bosses.iterator();
+                while (bossIterator.hasNext()) {
+                    Boss boss = bossIterator.next();
+                    if (new Rectangle(bullet.getX() - 5, bullet.getY(), 10, 10).intersects(
+                            new Rectangle(boss.getX(), boss.getY(), boss.getSize(), boss.getSize()))) {
+                        boss.takeDamage(1);
+                        if (!bullet.isPiercing()) {
+                            bulletIterator.remove();
+                        }
+                        if (boss.isDead()) {
+                            // Boss destroyed - massive rewards!
+                            addExplosionForBoss(boss);
+                            bossIterator.remove();
+                            game.setAnnouncerMessage("BOSS DESTROYED!", 2000);
+                            game.addPoints(500); // Huge point reward for boss kill
+                            game.recordInvaderKill(); // Also counts as kills for difficulty scaling
+                            game.triggerScreenShake(400, 10); // Big shake on boss death
+                        } else {
+                            // Boss hit but survives - create small explosion
+                            int centerX = boss.getX() + boss.getSize() / 2;
+                            int centerY = boss.getY() + boss.getSize() / 2;
+                            synchronized (game) {
+                                game.explosions.add(new Explosion(centerX, centerY, boss.getSize() / 3, EXPLOSION_DURATION_MS));
+                            }
+                        }
+                        if (!bullet.isPiercing()) break;
+                    }
+                }
+            }
+
+            // Check shooter-boss collisions
+            if (!game.isGameOver()) {
+                int shooterX = game.getShooter_X_Coordinate();
+                int shooterY = game.getHeight() - game.getShooterHeight();
+                int shooterWidth = game.getShooterWidth();
+                int shooterHeight = game.getShooterHeight();
+
+                Rectangle shooterRect = new Rectangle(shooterX, shooterY, shooterWidth, shooterHeight);
+
+                Iterator<Boss> bossIterator = game.bosses.iterator();
+                while (bossIterator.hasNext()) {
+                    Boss boss = bossIterator.next();
+                    Rectangle bossRect = new Rectangle(boss.getX(), boss.getY(), boss.getSize(), boss.getSize());
+                    if (shooterRect.intersects(bossRect)) {
+                        // Boss collides with shooter
+                        int centerX = boss.getX() + boss.getSize() / 2;
+                        int centerY = boss.getY() + boss.getSize() / 2;
+                        synchronized (game) {
+                            game.explosions.add(new Explosion(centerX, centerY, boss.getSize() / 2, EXPLOSION_DURATION_MS));
+                        }
+                        bossIterator.remove();
+                        game.damagePlayer();
+                        game.triggerScreenShake(150, 8); // Big shake on boss hit
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    private void addExplosionForBoss(Boss boss) {
+        // Create a larger explosion for boss death
+        int centerX = boss.getX() + boss.getSize() / 2;
+        int centerY = boss.getY() + boss.getSize() / 2;
+
+        if (!game.isExplosionsEnabled()) {
+            return;
+        }
+
+        int maxRadius = boss.getSize();
+        synchronized (game) {
+            // Create multiple explosions for dramatic effect
+            game.explosions.add(new Explosion(centerX, centerY, maxRadius, EXPLOSION_DURATION_MS));
+            game.explosions.add(new Explosion(centerX - 30, centerY - 20, maxRadius / 2, EXPLOSION_DURATION_MS));
+            game.explosions.add(new Explosion(centerX + 30, centerY + 20, maxRadius / 2, EXPLOSION_DURATION_MS));
         }
     }
 

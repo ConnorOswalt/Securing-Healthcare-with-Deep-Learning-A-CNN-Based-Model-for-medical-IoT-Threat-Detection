@@ -115,6 +115,15 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private boolean pendingRandomRickSnippet = false;
     private boolean pendingResumeInterruptedTrackAfterRick = false;
 
+    // Screen shake and difficulty tracking
+    private int screenShakeOffsetX = 0;
+    private int screenShakeOffsetY = 0;
+    private long screenShakeEndTimeMs = 0;
+    private int totalInvaderKills = 0;
+    public ArrayList<spaceinvaders.characters.Boss> bosses;
+    private static final int BOSS_SPAWN_MILESTONE = 30; // Spawn boss every 30 kills
+    private double difficultyMultiplier = 1.0; // Scales spawn rate and speed
+
     // Constructor
     public SpaceInvadersUI() {
         activeInstance = this;
@@ -126,6 +135,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         bullets = new ArrayList<>();
         explosions = new ArrayList<>();
         deathEffects = new ArrayList<>();
+        bosses = new ArrayList<>();
         powerUps = new ArrayList<>();
         random = new Random();
         moveLeft = false;
@@ -198,15 +208,27 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     // Let's move these methods into a separate PaintUI class
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        AffineTransform originalTransform = g2d.getTransform();
+
+        // Apply screen shake transform
+        int shakeX = getScreenShakeOffsetX();
+        int shakeY = getScreenShakeOffsetY();
+        if (shakeX != 0 || shakeY != 0) {
+            g2d.translate(shakeX, shakeY);
+        }
+
         paintingActions.drawBackground(g, this);
 
         if (gameOver) {
             drawGameOver(g);
+            g2d.setTransform(originalTransform);
             return;
         }
         
         if (paused) {
             drawPauseScreen(g);
+            g2d.setTransform(originalTransform);
             return;
         }
 
@@ -215,6 +237,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         // Draw falling invaders (as images)
         paintingActions.drawInvaders(g, this, imageSelection.getInvaderImage());
+
+        // Draw bosses
+        paintingActions.drawBosses(g, this, imageSelection.getBossImage());
 
         // Draw invader explosion effects
         paintingActions.drawExplosions(g, this);
@@ -239,6 +264,9 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
 
         // Active power-up HUD bar
         paintingActions.drawActivePowerUpHud(g, this);
+
+        // Restore transform before drawing overlay
+        g2d.setTransform(originalTransform);
 
         drawSillyOverlay(g);
     }
@@ -847,6 +875,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             explosions.clear();
             deathEffects.clear();
             powerUps.clear();
+            bosses.clear();
             clearActivePowerUp();
             laserBeamX = -1;
             laserBeamUntilMs = 0;
@@ -869,6 +898,11 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             comboCount = 0;
             comboWindowUntilMs = 0;
             clearTemporaryRickRestore();
+            totalInvaderKills = 0;
+            difficultyMultiplier = 1.0;
+            screenShakeOffsetX = 0;
+            screenShakeOffsetY = 0;
+            screenShakeEndTimeMs = 0;
         }
 
         // Reset the current score for the new game
@@ -883,6 +917,86 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         if (musicHandler != null) {
             musicHandler.resumeTrack();
         }
+    }
+
+    // === Screen Shake & Difficulty Tracking Methods ===
+
+    /**
+     * Triggers screen shake effect for the specified duration.
+     * @param durationMs how long the shake lasts
+     * @param intensity how far to offset (pixels)
+     */
+    public void triggerScreenShake(long durationMs, int intensity) {
+        screenShakeEndTimeMs = System.currentTimeMillis() + durationMs;
+        // Initial shake offset
+        int offsetX = random.nextInt(intensity * 2 + 1) - intensity;
+        int offsetY = random.nextInt(intensity * 2 + 1) - intensity;
+        screenShakeOffsetX = offsetX;
+        screenShakeOffsetY = offsetY;
+    }
+
+    /**
+     * Updates screen shake offset (called during render).
+     * @return true if still shaking, false if ended
+     */
+    public boolean updateScreenShake() {
+        long now = System.currentTimeMillis();
+        if (now >= screenShakeEndTimeMs) {
+            screenShakeOffsetX = 0;
+            screenShakeOffsetY = 0;
+            return false;
+        }
+
+        // Randomize shake offset each frame for jittery effect
+        int intensity = 5;
+        screenShakeOffsetX = random.nextInt(intensity * 2 + 1) - intensity;
+        screenShakeOffsetY = random.nextInt(intensity * 2 + 1) - intensity;
+        return true;
+    }
+
+    public int getScreenShakeOffsetX() {
+        return screenShakeOffsetX;
+    }
+
+    public int getScreenShakeOffsetY() {
+        return screenShakeOffsetY;
+    }
+
+    /**
+     * Records an invader kill and updates difficulty scaling.
+     * Triggers boss spawn at milestones.
+     */
+    public void recordInvaderKill() {
+        totalInvaderKills++;
+
+        // Update difficulty multiplier: every 20 kills, increase by 10%
+        difficultyMultiplier = 1.0 + (totalInvaderKills / 20) * 0.1;
+
+        // Spawn boss at milestones (every 30 kills)
+        if (totalInvaderKills % BOSS_SPAWN_MILESTONE == 0 && totalInvaderKills > 0) {
+            spawnBoss();
+        }
+
+        triggerScreenShake(200, 4); // Shake camera on invader kill
+    }
+
+    public int getTotalInvaderKills() {
+        return totalInvaderKills;
+    }
+
+    public double getDifficultyMultiplier() {
+        return difficultyMultiplier;
+    }
+
+    private void spawnBoss() {
+        // Spawn boss at random x position at top
+        int bossX = random.nextInt(Math.max(1, getWidth() - 100));
+        spaceinvaders.characters.Boss boss = new spaceinvaders.characters.Boss(bossX, 0);
+        synchronized (this) {
+            bosses.add(boss);
+        }
+        setAnnouncerMessage("BOSS INCOMING!", 2000);
+        triggerScreenShake(300, 8); // Dramatic shake on boss spawn
     }
 
     /**
