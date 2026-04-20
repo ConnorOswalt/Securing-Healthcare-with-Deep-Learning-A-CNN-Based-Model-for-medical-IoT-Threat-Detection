@@ -166,13 +166,37 @@ public class PaintingActions {
     }
 
     public void drawCurrentScore(Graphics g, SpaceInvadersUI game) {
+        Graphics2D g2d = (Graphics2D) g;
         int score = game.getScoreManager().getCurrentScore();
-        g.setColor(Color.WHITE);
-        g.setFont(new Font("Arial", Font.BOLD, 14));
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("Arial", Font.BOLD, 14));
         String scoreText = String.format("Score: %03d", score);
-        FontMetrics fm = g.getFontMetrics();
+        FontMetrics fm = g2d.getFontMetrics();
         int textWidth = fm.stringWidth(scoreText);
-        g.drawString(scoreText, game.getWidth() - textWidth - 10, 20);
+        int scoreX = game.getWidth() - textWidth - 10;
+        g2d.drawString(scoreText, scoreX, 20);
+
+        int themesLeft = game.getRemainingThemeCount();
+        String nextBossTheme = game.getNextThemeBossName();
+        String nextText = "Next Boss Theme: " + nextBossTheme;
+        String leftText = "Themes Left: " + themesLeft;
+
+        g2d.setFont(new Font("Arial", Font.BOLD, 12));
+        FontMetrics hudFm = g2d.getFontMetrics();
+        int hudWidth = Math.max(hudFm.stringWidth(nextText), hudFm.stringWidth(leftText)) + 18;
+        int hudHeight = 36;
+        int hudX = game.getWidth() - hudWidth - 10;
+        int hudY = 30;
+
+        g2d.setColor(new Color(0, 0, 0, 165));
+        g2d.fillRoundRect(hudX, hudY, hudWidth, hudHeight, 10, 10);
+        g2d.setColor(new Color(255, 255, 255, 45));
+        g2d.drawRoundRect(hudX, hudY, hudWidth, hudHeight, 10, 10);
+
+        g2d.setColor(new Color(180, 225, 255));
+        g2d.drawString(nextText, hudX + 9, hudY + 14);
+        g2d.setColor(new Color(255, 235, 120));
+        g2d.drawString(leftText, hudX + 9, hudY + 29);
     }
 
     public void drawDeathEffects(Graphics g, SpaceInvadersUI game) {
@@ -281,8 +305,11 @@ public class PaintingActions {
 
         Graphics2D g2d = (Graphics2D) g;
         for (Boss boss : bossesCopy) {
-            if (bossImage != null) {
-                g2d.drawImage(bossImage, boss.getX(), boss.getY(), boss.getSize(), boss.getSize(), game);
+            Image themedBossImage = game.imageSelection.getImageFromResourcePath(boss.getShooterSkinPath());
+            Image imageToDraw = themedBossImage != null ? themedBossImage : bossImage;
+
+            if (imageToDraw != null) {
+                g2d.drawImage(imageToDraw, boss.getX(), boss.getY(), boss.getSize(), boss.getSize(), game);
             } else {
                 // Fallback: Draw a red rectangle with health bar
                 g2d.setColor(new Color(255, 100, 100));

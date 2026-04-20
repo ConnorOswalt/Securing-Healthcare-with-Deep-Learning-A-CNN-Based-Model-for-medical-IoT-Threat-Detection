@@ -262,6 +262,43 @@ public class ThemeImplementation {
         return normalized;
     }
 
+    public static String readOptionalThemeResourcePath(String themeJsonResourcePath, String key) {
+        if (themeJsonResourcePath == null || themeJsonResourcePath.isBlank()
+                || key == null || key.isBlank()) {
+            return null;
+        }
+
+        String normalizedThemePath = normalizeResourcePath(themeJsonResourcePath);
+        String jsonContent = readResourceFile(normalizedThemePath);
+        if (jsonContent == null) {
+            return null;
+        }
+
+        return extractOptionalPath(jsonContent, key);
+    }
+
+    public static String readOptionalThemeString(String themeJsonResourcePath, String key) {
+        if (themeJsonResourcePath == null || themeJsonResourcePath.isBlank()
+                || key == null || key.isBlank()) {
+            return null;
+        }
+
+        String normalizedThemePath = normalizeResourcePath(themeJsonResourcePath);
+        String jsonContent = readResourceFile(normalizedThemePath);
+        if (jsonContent == null) {
+            return null;
+        }
+
+        String quotedKey = Pattern.quote(key);
+        Pattern pattern = Pattern.compile(String.format(STRING_FIELD_PATTERN_TEMPLATE.pattern(), quotedKey));
+        Matcher matcher = pattern.matcher(jsonContent);
+        if (!matcher.find()) {
+            return null;
+        }
+
+        return matcher.group(1);
+    }
+
     private static Boolean extractBoolean(String jsonContent, String key) {
         String quotedKey = Pattern.quote(key);
         Pattern pattern = Pattern.compile(String.format(BOOLEAN_FIELD_PATTERN_TEMPLATE.pattern(), quotedKey),

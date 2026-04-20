@@ -9,15 +9,25 @@ public class Boss {
     private int size;
     private int health;
     private final int maxHealth;
+    private final String themePath;
+    private final String shooterSkinPath;
+    private final String themeName;
     private static final int BASE_SIZE = 100;
     private static final int BASE_HEALTH = 5; // Takes 5 hits to kill
 
     public Boss(int x, int y) {
+        this(x, y, null, null, null);
+    }
+
+    public Boss(int x, int y, String themePath, String shooterSkinPath, String themeName) {
         this.x = x;
         this.y = y;
         this.size = BASE_SIZE;
         this.maxHealth = BASE_HEALTH;
         this.health = maxHealth;
+        this.themePath = themePath;
+        this.shooterSkinPath = shooterSkinPath;
+        this.themeName = themeName;
     }
 
     public int getX() {
@@ -58,5 +68,17 @@ public class Boss {
 
     public float getHealthRatio() {
         return health / (float) maxHealth;
+    }
+
+    public String getThemePath() {
+        return themePath;
+    }
+
+    public String getShooterSkinPath() {
+        return shooterSkinPath;
+    }
+
+    public String getThemeName() {
+        return themeName;
     }
 }

@@ -262,10 +262,7 @@ public class GameCalculator extends Thread {
                 boss.takeDamage(boss.getMaxHealth()); // Laser one-shots the boss
                 addExplosionForBoss(boss);
                 bossIt.remove();
-                game.setAnnouncerMessage("BOSS DESTROYED!", 2000);
-                game.addPoints(500);
-                game.recordInvaderKill();
-                game.triggerScreenShake(400, 10);
+                game.handleBossDefeated(boss);
             }
         }
     }
@@ -490,10 +487,7 @@ public class GameCalculator extends Thread {
                             // Boss destroyed - massive rewards!
                             addExplosionForBoss(boss);
                             bossIterator.remove();
-                            game.setAnnouncerMessage("BOSS DESTROYED!", 2000);
-                            game.addPoints(500); // Huge point reward for boss kill
-                            game.recordInvaderKill(); // Also counts as kills for difficulty scaling
-                            game.triggerScreenShake(400, 10); // Big shake on boss death
+                            game.handleBossDefeated(boss);
                         } else {
                             // Boss hit but survives - create small explosion
                             int centerX = boss.getX() + boss.getSize() / 2;

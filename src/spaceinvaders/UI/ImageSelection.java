@@ -8,9 +8,11 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.metadata.IIOMetadata;
@@ -28,6 +30,7 @@ public class ImageSelection {
     private Image rickInvaderImage;
     private Image laserBeamImage;
     private Image bossImage;
+    private final Map<String, Image> resourceImageCache = new HashMap<>();
     private Image bulletImage;
     private List<BufferedImage> bulletGifFrames = Collections.emptyList();
     private long[] bulletGifFrameEndTimesMs = new long[0];
@@ -67,6 +70,23 @@ public class ImageSelection {
             bossImage = loadImageIfPresent(BOSS_IMAGE_PATH);
         }
         return bossImage;
+    }
+
+    public Image getImageFromResourcePath(String resourcePath) {
+        if (resourcePath == null || resourcePath.isBlank()) {
+            return null;
+        }
+
+        Image cached = resourceImageCache.get(resourcePath);
+        if (cached != null) {
+            return cached;
+        }
+
+        Image loaded = loadImageIfPresent(resourcePath);
+        if (loaded != null) {
+            resourceImageCache.put(resourcePath, loaded);
+        }
+        return loaded;
     }
 
     public Image getBulletImage() {
