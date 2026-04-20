@@ -244,9 +244,24 @@ public class GameCalculator extends Thread {
                 addExplosionForInvader(inv);
                 it.remove();
                 game.recordInvaderDefeatCombo();
-                game.recordInvaderKill(); // New: triggers difficulty scaling, boss spawning, screen shake
+                game.recordInvaderKill();
                 int points = game.getActiveSillyModifier() == SpaceInvadersUI.SillyModifier.TINY_PANIC ? 20 : 10;
                 game.addPoints(points);
+            }
+        }
+
+        // Laser beam also hits bosses
+        Iterator<Boss> bossIt = game.bosses.iterator();
+        while (bossIt.hasNext()) {
+            Boss boss = bossIt.next();
+            if (beamRect.intersects(new Rectangle(boss.getX(), boss.getY(), boss.getSize(), boss.getSize()))) {
+                boss.takeDamage(boss.getMaxHealth()); // Laser one-shots the boss
+                addExplosionForBoss(boss);
+                bossIt.remove();
+                game.setAnnouncerMessage("BOSS DESTROYED!", 2000);
+                game.addPoints(500);
+                game.recordInvaderKill();
+                game.triggerScreenShake(400, 10);
             }
         }
     }
@@ -272,7 +287,10 @@ public class GameCalculator extends Thread {
             // Difficulty multiplier increases spawn chance over time
             double spawnChance = 5 * game.getDifficultyMultiplier();
             if (game.random.nextInt(100) < spawnChance) {
-                int x = game.random.nextInt(game.getWidth());
+                // Use a margin so invaders always spawn within the visible playfield
+                int spawnMargin = 50;
+                int spawnWidth = Math.max(1, game.getWidth() - spawnMargin * 2);
+                int x = spawnMargin + game.random.nextInt(spawnWidth);
                 // Never spawn Rick invaders while the Rick Roll effect is already active —
                 // hitting a second one during the effect corrupts the restore snapshot.
                 boolean isRickInvader = !game.isRickRollActive()

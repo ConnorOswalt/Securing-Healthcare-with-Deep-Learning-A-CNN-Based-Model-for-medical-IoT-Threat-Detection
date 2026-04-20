@@ -908,6 +908,17 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     }
 
     public void restartGame() {
+        // Capture pre-Rick theme before clearing Rick Roll state, so we can restore it after restart
+        String preRickThemePath = null;
+        boolean restoreDefaultAfterRestart = false;
+        synchronized (this) {
+            if (RICK_THEME_PATH.equals(currentThemePath)
+                    && (temporaryRickRestoreThemePath != null || temporaryRickRestoreToDefaultState)) {
+                preRickThemePath = temporaryRickRestoreThemePath;
+                restoreDefaultAfterRestart = temporaryRickRestoreToDefaultState;
+            }
+        }
+
         synchronized (this) {
             invaders.clear();
             bullets.clear();
@@ -954,11 +965,27 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         // Don't restart scoreManager - it's a daemon thread that keeps running
         repaintTimer.start();
 
-        // Resume music that was playing before the game ended
-        if (musicHandler != null) {
-            musicHandler.resumeTrack();
+            // Determine which theme to re-apply on restart.
+            // Never rely on the music handler's stale pendingTrackResourcePath — always drive from theme.
+            if (musicHandler != null) {
+                musicHandler.clearInterruptedTrack();
+                musicHandler.stopCurrentTrack();
+            }
+            if (preRickThemePath != null) {
+                // Died while a Rick Roll was active — restore the theme that was playing before Rick
+                ThemeImplementation.requestThemeChange(this, preRickThemePath);
+            } else if (restoreDefaultAfterRestart) {
+                // Died while Rick Roll was active but no prior theme existed — fall back to Default
+                ThemeImplementation.requestThemeChange(this, "/resources/Themes/Default.json");
+            } else if (currentThemePath != null && !currentThemePath.isBlank()
+                    && !RICK_THEME_PATH.equals(currentThemePath)) {
+                // Normal case — re-apply whatever theme was selected before death
+                ThemeImplementation.requestThemeChange(this, currentThemePath);
+            } else {
+                // No theme or stuck on Rick (shouldn't happen, but be safe)
+                ThemeImplementation.requestThemeChange(this, "/resources/Themes/Default.json");
+            }
         }
-    }
 
     // === Screen Shake & Difficulty Tracking Methods ===
 
