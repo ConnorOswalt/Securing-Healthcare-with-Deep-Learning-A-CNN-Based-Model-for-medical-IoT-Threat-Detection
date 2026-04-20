@@ -6,6 +6,5 @@
   "music": "/resources/Music/RickRoll.wav",
   "deathscreen": "/resources/Background/RickAstley.gif",
   "deathsound": "/resources/SoundEffects/player_death.wav",
-  "death_explosion": "/resources/SoundEffects/player_death.wav",
   "deathsound_enabled": true
 }

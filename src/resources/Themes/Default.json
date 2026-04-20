@@ -2,5 +2,6 @@
   "name": "Default",
   "restore_defaults": true,
   "stars_background": true,
-  "music_enabled": false
+  "music_enabled": false,
+  "music": "/resources/Music/Default.wav"
 }

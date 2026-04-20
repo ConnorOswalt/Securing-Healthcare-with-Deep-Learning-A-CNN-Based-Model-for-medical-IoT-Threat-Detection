@@ -1,4 +1,5 @@
 Rick,2147483647
+Anonymous,3660
 Player Name,820
 Player Name,620
 Player Name,360
@@ -7,4 +8,3 @@ Player Name,270
 Player Name,250
 Player Name,220
 Player Name,190
-Anonymous,190

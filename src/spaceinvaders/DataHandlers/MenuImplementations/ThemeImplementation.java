@@ -195,7 +195,9 @@ public class ThemeImplementation {
             if (Boolean.FALSE.equals(musicEnabled)) {
                 game.getMusicHandler().clearInterruptedTrack();
                 game.getMusicHandler().stopCurrentTrack();
+                game.setCurrentThemeExpectedMusicPath(null);
             } else if (musicPath != null) {
+                game.setCurrentThemeExpectedMusicPath(musicPath);
                 if (game.isGameOver()) {
                     game.getMusicHandler().queueTrackWithoutPlaying(musicPath);
                 } else if (game.consumePendingRandomRickSnippet()) {
@@ -208,6 +210,8 @@ public class ThemeImplementation {
                 } else {
                     game.getMusicHandler().selectTrack(musicPath);
                 }
+            } else {
+                game.setCurrentThemeExpectedMusicPath(null);
             }
         }
 

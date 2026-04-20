@@ -273,7 +273,10 @@ public class GameCalculator extends Thread {
             double spawnChance = 5 * game.getDifficultyMultiplier();
             if (game.random.nextInt(100) < spawnChance) {
                 int x = game.random.nextInt(game.getWidth());
-                boolean isRickInvader = game.random.nextInt(100) < RICK_INVADER_CHANCE_PERCENT;
+                // Never spawn Rick invaders while the Rick Roll effect is already active —
+                // hitting a second one during the effect corrupts the restore snapshot.
+                boolean isRickInvader = !game.isRickRollActive()
+                        && game.random.nextInt(100) < RICK_INVADER_CHANCE_PERCENT;
                 spawnCounter++;
 
                 int baseSize = 40;

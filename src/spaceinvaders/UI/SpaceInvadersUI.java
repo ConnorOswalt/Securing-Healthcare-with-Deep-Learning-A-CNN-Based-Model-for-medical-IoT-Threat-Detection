@@ -115,6 +115,10 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private boolean pendingRandomRickSnippet = false;
     private boolean pendingResumeInterruptedTrackAfterRick = false;
 
+    // Theme integrity checker
+    private String currentThemeExpectedMusicPath;
+    private long nextThemeIntegrityCheckMs = 0;
+
     // Screen shake and difficulty tracking
     private int screenShakeOffsetX = 0;
     private int screenShakeOffsetY = 0;
@@ -160,7 +164,8 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             @Override
             public void componentResized(java.awt.event.ComponentEvent e) {
                 if (getWidth() > 0 && getHeight() > 0) {
-                    imageSelection.enableStarsBackground(SpaceInvadersUI.this);
+                    // Apply Default theme first — sets stars background, no music
+                    ThemeImplementation.requestThemeChange(SpaceInvadersUI.this, "/resources/Themes/Default.json");
                     repaint();
                     // Now that UI is initialized, start the game calculator thread
                     gameCalculator = new GameCalculator(SpaceInvadersUI.this);
@@ -431,6 +436,39 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         this.currentThemePath = currentThemePath;
     }
 
+    /**
+     * Called by ThemeImplementation after music is resolved.
+     * Stores the expected music path so the integrity checker can verify it later.
+     */
+    public void setCurrentThemeExpectedMusicPath(String path) {
+        this.currentThemeExpectedMusicPath = path;
+    }
+
+    /**
+     * Periodically verifies that the active theme's music is still playing.
+     * If it has drifted (e.g. Rick Roll didn't clean up), re-applies the theme.
+     * Only runs when a non-Rick theme is active.
+     */
+    private void checkThemeIntegrity(long now) {
+        if (now < nextThemeIntegrityCheckMs) return;
+        nextThemeIntegrityCheckMs = now + 3000;
+
+        // Only verify when a real theme is set and we're not mid-Rick-Roll
+        if (currentThemePath == null || currentThemePath.isBlank() || isRickRollActive()) return;
+
+        // Only check if this theme specifies music (music_enabled: false themes have no expected track)
+        if (currentThemeExpectedMusicPath == null) return;
+
+        // If the expected track is no longer playing, re-apply the theme to restore it
+        if (musicHandler != null && !musicHandler.isTrackActive(currentThemeExpectedMusicPath)) {
+            ThemeImplementation.requestThemeChange(this, currentThemePath);
+        }
+    }
+
+    public boolean isRickRollActive() {
+        return RICK_THEME_PATH.equals(currentThemePath) || temporaryRickRestoreAtMs > 0;
+    }
+
     public boolean consumePendingRandomRickSnippet() {
         boolean shouldUseRandomSnippet = pendingRandomRickSnippet;
         pendingRandomRickSnippet = false;
@@ -475,6 +513,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     public void updateTemporaryRickThemeRestore() {
         long now = System.currentTimeMillis();
         runRickRollMusicFailsafe(now);
+        checkThemeIntegrity(now);
 
         if ((!temporaryRickRestoreToDefaultState && temporaryRickRestoreThemePath == null)
                 || now < temporaryRickRestoreAtMs) {
@@ -903,6 +942,8 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
             screenShakeOffsetX = 0;
             screenShakeOffsetY = 0;
             screenShakeEndTimeMs = 0;
+            currentThemeExpectedMusicPath = null;
+            nextThemeIntegrityCheckMs = 0;
         }
 
         // Reset the current score for the new game
