@@ -1,28 +1,51 @@
 package spaceinvaders.scores;
 
+import spaceinvaders.UI.SpaceInvadersUI;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 public class LeaderboardPanel extends JPanel {
-    private ScoreManager scoreManager;
+    private final ScoreManager scoreManager;
+    private final SpaceInvadersUI game;
     private JTable leaderboardTable;
     private DefaultTableModel tableModel;
     public Timer refreshTimer;
     private JLabel noScoresLabel;
+    private List<DisplayRow> displayedRows = new ArrayList<>();
     
     // Static field to track if leaderboard is enabled
     private static boolean leaderboardEnabled = true;
 
+    private static class DisplayRow {
+        private final String name;
+        private final int score;
+        private final boolean live;
+
+        private DisplayRow(String name, int score, boolean live) {
+            this.name = name;
+            this.score = score;
+            this.live = live;
+        }
+    }
+
     public LeaderboardPanel(ScoreManager scoreManager) {
+        this(scoreManager, null);
+    }
+
+    public LeaderboardPanel(ScoreManager scoreManager, SpaceInvadersUI game) {
         this.scoreManager = scoreManager;
+        this.game = game;
         setBackground(Color.BLACK);
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Get the leaderboard
-        List<ScoreEntry> leaderboard = scoreManager.getLeaderboard();
+        List<DisplayRow> leaderboard = buildDisplayRows();
 
         if (leaderboard.isEmpty()) {
             // Show "No scores yet!" message
@@ -39,7 +62,9 @@ public class LeaderboardPanel extends JPanel {
         refreshTimer.start();
     }
 
-    private void setupLeaderboardTable(List<ScoreEntry> leaderboard) {
+    private void setupLeaderboardTable(List<DisplayRow> leaderboard) {
+        displayedRows = leaderboard;
+
         // Create table model
         String[] columnNames = {"Rank", "Name", "Score"};
         tableModel = new DefaultTableModel(columnNames, 0) {
@@ -51,8 +76,8 @@ public class LeaderboardPanel extends JPanel {
 
         // Populate table with leaderboard data
         for (int i = 0; i < leaderboard.size(); i++) {
-            ScoreEntry entry = leaderboard.get(i);
-            tableModel.addRow(new Object[]{i + 1, entry.getName(), entry.getScore()});
+            DisplayRow entry = leaderboard.get(i);
+            tableModel.addRow(new Object[]{i + 1, entry.name, entry.score});
         }
 
         // Create and configure table
@@ -62,6 +87,27 @@ public class LeaderboardPanel extends JPanel {
         leaderboardTable.setGridColor(Color.DARK_GRAY);
         leaderboardTable.setRowHeight(25);
         leaderboardTable.setFont(new Font("Arial", Font.PLAIN, 14));
+        leaderboardTable.setDefaultRenderer(Object.class, new DefaultTableCellRenderer() {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                           boolean hasFocus, int row, int column) {
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                if (row >= 0 && row < displayedRows.size()) {
+                    DisplayRow displayRow = displayedRows.get(row);
+                    if (displayRow.live) {
+                        c.setBackground(new Color(45, 80, 45));
+                        c.setForeground(new Color(230, 255, 230));
+                    } else {
+                        c.setBackground(Color.BLACK);
+                        c.setForeground(Color.WHITE);
+                    }
+                } else {
+                    c.setBackground(Color.BLACK);
+                    c.setForeground(Color.WHITE);
+                }
+                return c;
+            }
+        });
 
         // Configure header
         leaderboardTable.getTableHeader().setBackground(new Color(40, 40, 40));
@@ -81,7 +127,7 @@ public class LeaderboardPanel extends JPanel {
     }
 
     private void refreshLeaderboard() {
-        List<ScoreEntry> leaderboard = scoreManager.getLeaderboard();
+        List<DisplayRow> leaderboard = buildDisplayRows();
 
         if (leaderboard.isEmpty()) {
             // Switch to "No scores yet!" label if leaderboard is empty
@@ -106,13 +152,36 @@ public class LeaderboardPanel extends JPanel {
                 repaint();
             } else {
                 // Refresh existing table
+                displayedRows = leaderboard;
                 tableModel.setRowCount(0); // Clear existing rows
                 for (int i = 0; i < leaderboard.size(); i++) {
-                    ScoreEntry entry = leaderboard.get(i);
-                    tableModel.addRow(new Object[]{i + 1, entry.getName(), entry.getScore()});
+                    DisplayRow entry = leaderboard.get(i);
+                    tableModel.addRow(new Object[]{i + 1, entry.name, entry.score});
                 }
             }
         }
+    }
+
+    private List<DisplayRow> buildDisplayRows() {
+        List<DisplayRow> rows = new ArrayList<>();
+        List<ScoreEntry> leaderboard = scoreManager.getLeaderboard();
+        for (ScoreEntry entry : leaderboard) {
+            rows.add(new DisplayRow(entry.getName(), entry.getScore(), false));
+        }
+
+        if (game != null) {
+            String currentPlayer = game.getPlayerNameForLeaderboard();
+            if (currentPlayer != null && !currentPlayer.isBlank()) {
+                rows.add(new DisplayRow(currentPlayer, scoreManager.getCurrentScore(), true));
+            }
+        }
+
+        rows.sort(Comparator.comparingInt((DisplayRow row) -> row.score).reversed());
+        if (rows.size() > 10) {
+            return new ArrayList<>(rows.subList(0, 10));
+        }
+
+        return rows;
     }
 
     /**
@@ -123,6 +192,13 @@ public class LeaderboardPanel extends JPanel {
      * @param manager the ScoreManager to display leaderboard from
      */
     public static void showLeaderboard(ScoreManager manager) {
+        showLeaderboard(manager, null);
+    }
+
+    /**
+     * Opens the leaderboard and includes the current player's live score row when game is provided.
+     */
+    public static void showLeaderboard(ScoreManager manager, SpaceInvadersUI game) {
         // Check if leaderboard is enabled
         if (!leaderboardEnabled) {
             return;
@@ -137,7 +213,7 @@ public class LeaderboardPanel extends JPanel {
         dialog.setModalityType(Dialog.ModalityType.MODELESS); // Non-modal so game can continue
 
         // Add the leaderboard panel
-        LeaderboardPanel panel = new LeaderboardPanel(manager);
+    LeaderboardPanel panel = new LeaderboardPanel(manager, game);
         
         // Stop the refresh timer when dialog is closed
         dialog.addWindowListener(new java.awt.event.WindowAdapter() {

@@ -4,6 +4,7 @@ import spaceinvaders.DataHandlers.MusicHandler;
 import spaceinvaders.DataHandlers.MenuImplementations.ThemeImplementation;
 import spaceinvaders.GameCalculator;
 import spaceinvaders.ListenerActions;
+import spaceinvaders.scores.LeaderboardPanel;
 import spaceinvaders.scores.ScoreManager;
 import spaceinvaders.characters.Bullet;
 import spaceinvaders.characters.Explosion;
@@ -89,6 +90,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     private MusicHandler musicHandler;
     public static int breakpointcounter = 0;
     private ScoreManager scoreManager;
+    private String playerNameForLeaderboard = "Anonymous";
     private static final int MAX_PLAYER_HEALTH = 100;
     private static final int PLAYER_HIT_DAMAGE = 34;
     private static final int INVADER_KILL_HEAL = 6;
@@ -463,6 +465,31 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
      */
     public ScoreManager getScoreManager() {
         return scoreManager;
+    }
+
+    public String getPlayerNameForLeaderboard() {
+        if (playerNameForLeaderboard == null || playerNameForLeaderboard.isBlank()) {
+            return "Anonymous";
+        }
+        return playerNameForLeaderboard;
+    }
+
+    private void promptForPlayerNameIfNeeded() {
+        if (!LeaderboardPanel.isLeaderboardEnabled()) {
+            return;
+        }
+
+        String initialValue = getPlayerNameForLeaderboard();
+        String playerName = JOptionPane.showInputDialog(this,
+                "Enter your name for the leaderboard:",
+                initialValue);
+
+        if (playerName == null || playerName.trim().isEmpty()) {
+            playerNameForLeaderboard = "Anonymous";
+            return;
+        }
+
+        playerNameForLeaderboard = playerName.trim();
     }
 
     public MusicHandler getMusicHandler() {
@@ -899,7 +926,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
         float glowPulse = 0.72f + 0.38f * (float) Math.sin(now * 0.006);
 
         g2d.setFont(new Font("Arial", Font.BOLD, 44));
-        String title = "SPACE INVADERS";
+        String title = "DARTH INVADERS";
         FontMetrics titleMetrics = g2d.getFontMetrics();
         int titleX = panelX + (panelWidth - titleMetrics.stringWidth(title)) / 2;
         int titleY = panelY + 82;
@@ -1300,6 +1327,7 @@ public class SpaceInvadersUI extends JPanel implements KeyListener {
     }
 
     public void startGameFromStarterScreen() {
+        promptForPlayerNameIfNeeded();
         gameStarted = true;
         paused = false;
         if (musicHandler != null) {

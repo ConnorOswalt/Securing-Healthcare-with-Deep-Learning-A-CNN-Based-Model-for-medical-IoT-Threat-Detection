@@ -25,7 +25,6 @@ public class GameCalculator extends Thread {
     private static final long UPDATE_INTERVAL_MS = 20; // Same as original timer interval
     private static final long FIRE_INTERVAL_MS = 150;
     private static final long EXPLOSION_DURATION_MS = 300;
-    private static final int RICK_INVADER_CHANCE_PERCENT = 2;
         private static final long MODIFIER_DURATION_MS = 8000;
     private static final long POWER_UP_DURATION_MS = 8000;
     private static final long LASER_BEAM_FLASH_MS = 220;
@@ -244,7 +243,6 @@ public class GameCalculator extends Thread {
             Invader inv = it.next();
             Rectangle invaderRect = new Rectangle(inv.getX(), inv.getY(), inv.getSize(), inv.getSize());
             if (beamRect.intersects(invaderRect)) {
-                if (inv.isRickRollTarget()) game.handleRickRollKill();
                 addExplosionForInvader(inv);
                 it.remove();
                 game.recordInvaderDefeatCombo();
@@ -292,10 +290,6 @@ public class GameCalculator extends Thread {
                 int spawnMargin = 50;
                 int spawnWidth = Math.max(1, game.getWidth() - spawnMargin * 2);
                 int x = spawnMargin + game.random.nextInt(spawnWidth);
-                // Never spawn Rick invaders while the Rick Roll effect is already active —
-                // hitting a second one during the effect corrupts the restore snapshot.
-                boolean isRickInvader = !game.isRickRollActive()
-                        && game.random.nextInt(100) < RICK_INVADER_CHANCE_PERCENT;
                 spawnCounter++;
 
                 int baseSize = 40;
@@ -311,7 +305,7 @@ public class GameCalculator extends Thread {
                 // Calculate speed based on difficulty (scales from 2 to 5 pixels/update)
                 int baseSpeed = 2;
                 int difficultySpeed = (int) (baseSpeed + (game.getDifficultyMultiplier() - 1.0) * 3);
-                Invader invader = new Invader(x, 0, baseSize, isRickInvader, difficultySpeed);
+                Invader invader = new Invader(x, 0, baseSize, false, difficultySpeed);
                 game.invaders.add(invader);
             }
         }
@@ -378,9 +372,6 @@ public class GameCalculator extends Thread {
                     if (new Rectangle(bullet.getX() - 5, bullet.getY(), 10, 10).intersects(
                             new Rectangle(invader.getX(), invader.getY(), invader.getSize(),
                                     invader.getSize()))) {
-                        if (invader.isRickRollTarget()) {
-                            game.handleRickRollKill();
-                        }
                         addExplosionForInvader(invader);
                         if (!bullet.isPiercing()) {
                             bulletIterator.remove();

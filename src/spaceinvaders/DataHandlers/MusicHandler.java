@@ -31,6 +31,10 @@ import javax.sound.sampled.UnsupportedAudioFileException;
  * changes off the EDT to keep UI interactions responsive.
  */
 public class MusicHandler extends Thread {
+    private static final int THEME_SWITCH_FADE_OUT_MS = 900;
+    private static final int THEME_SWITCH_FADE_IN_MS = 900;
+    private static final int THEME_SWITCH_FADE_STEPS = 24;
+
     private volatile boolean running = true;
     private final ExecutorService effectExecutor = Executors.newFixedThreadPool(4, r -> {
         Thread t = new Thread(r, "SoundEffect-Thread");
@@ -56,6 +60,22 @@ public class MusicHandler extends Thread {
     private final Map<String, Long> trackResumePositionsUs = new HashMap<>();
     private boolean muted = false;
     private int volumePercent = 80;
+
+    private static class TrackSnapshot {
+        private final Clip clip;
+        private final Sequencer sequencer;
+        private final Synthesizer synthesizer;
+
+        private TrackSnapshot(Clip clip, Sequencer sequencer, Synthesizer synthesizer) {
+            this.clip = clip;
+            this.sequencer = sequencer;
+            this.synthesizer = synthesizer;
+        }
+
+        private boolean hasAudio() {
+            return clip != null || sequencer != null;
+        }
+    }
 
     public MusicHandler() {
         setDaemon(true);
@@ -280,11 +300,11 @@ public class MusicHandler extends Thread {
     private void playTrack(String resourcePath, boolean randomStart, long minimumRemainingMs,
             boolean explicitStartPosition, long startPositionUs, boolean useSavedPosition) {
         saveCurrentTrackPosition();
-        closeCurrentTrack();
+        TrackSnapshot previous = snapshotCurrentTrack();
 
         if (isMidiResource(resourcePath)) {
-            playMidiTrack(resourcePath, randomStart, minimumRemainingMs, explicitStartPosition, startPositionUs,
-                    useSavedPosition);
+            playMidiTrack(previous, resourcePath, randomStart, minimumRemainingMs, explicitStartPosition,
+                startPositionUs, useSavedPosition);
             return;
         }
 
@@ -305,23 +325,28 @@ public class MusicHandler extends Thread {
             } else if (useSavedPosition) {
                 applySavedStartPosition(resourcePath, newClip);
             }
-            applyVolumeToClip(newClip);
             newClip.loop(Clip.LOOP_CONTINUOUSLY);
-            if (!muted) {
-                newClip.start();
-            }
+            crossfadeToNewClip(previous, newClip);
+            closeSnapshot(previous);
             clip = newClip;
+            midiSequencer = null;
+            midiSynthesizer = null;
             currentTrackResourcePath = resourcePath;
         } catch (UnsupportedAudioFileException | LineUnavailableException | java.io.IOException e) {
             GameExceptions.handleWithDialog("Failed to play music track", e);
+            closeSnapshot(previous);
+            closeCurrentTrack();
         }
     }
 
-    private void playMidiTrack(String resourcePath, boolean randomStart, long minimumRemainingMs,
+    private void playMidiTrack(TrackSnapshot previous, String resourcePath, boolean randomStart,
+            long minimumRemainingMs,
             boolean explicitStartPosition, long startPositionUs, boolean useSavedPosition) {
         URL trackUrl = MusicHandler.class.getResource(resourcePath);
         if (trackUrl == null) {
             GameExceptions.showErrorDialog("MIDI track not found: " + resourcePath);
+            closeSnapshot(previous);
+            closeCurrentTrack();
             return;
         }
 
@@ -352,16 +377,158 @@ public class MusicHandler extends Thread {
             }
 
             sequencer.setLoopCount(Sequencer.LOOP_CONTINUOUSLY);
+            crossfadeToNewMidiTrack(previous, sequencer, synthesizer);
+            closeSnapshot(previous);
+            clip = null;
             midiSequencer = sequencer;
             midiSynthesizer = synthesizer;
             currentTrackResourcePath = resourcePath;
-            applyVolumeToCurrentTrack();
-            if (!muted) {
-                sequencer.start();
-            }
         } catch (MidiUnavailableException | InvalidMidiDataException | IOException e) {
             GameExceptions.handleWithDialog("Failed to play MIDI track", e);
-            closeMidiTrack();
+            closeSnapshot(previous);
+            closeCurrentTrack();
+        }
+    }
+
+    private void crossfadeToNewClip(TrackSnapshot previous, Clip newClip) {
+        if (muted) {
+            applyVolumeToClip(newClip);
+            return;
+        }
+
+        if (!newClip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+            applyVolumeToClip(newClip);
+            newClip.start();
+            return;
+        }
+
+        FloatControl gainControl = (FloatControl) newClip.getControl(FloatControl.Type.MASTER_GAIN);
+        float minDb = gainControl.getMinimum();
+        float targetDb = computeTargetGainDb(gainControl);
+        gainControl.setValue(minDb);
+        newClip.start();
+
+        FloatControl previousGain = null;
+        float previousStartDb = 0;
+        float previousMinDb = 0;
+        if (previous != null && previous.clip != null && previous.clip.isRunning()
+                && previous.clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+            previousGain = (FloatControl) previous.clip.getControl(FloatControl.Type.MASTER_GAIN);
+            previousStartDb = previousGain.getValue();
+            previousMinDb = previousGain.getMinimum();
+        }
+
+        int stepDurationMs = Math.max(1, Math.max(THEME_SWITCH_FADE_OUT_MS, THEME_SWITCH_FADE_IN_MS)
+                / THEME_SWITCH_FADE_STEPS);
+        for (int i = 1; i <= THEME_SWITCH_FADE_STEPS; i++) {
+            float progress = i / (float) THEME_SWITCH_FADE_STEPS;
+            float db = minDb + (targetDb - minDb) * progress;
+            gainControl.setValue(Math.min(targetDb, db));
+
+            if (previousGain != null) {
+                float prevDb = previousStartDb + (previousMinDb - previousStartDb) * progress;
+                previousGain.setValue(Math.max(previousMinDb, prevDb));
+            }
+
+            sleepForFadeStep(stepDurationMs);
+        }
+    }
+
+    private void crossfadeToNewMidiTrack(TrackSnapshot previous, Sequencer sequencer, Synthesizer synthesizer) {
+        if (muted) {
+            applyVolumeToCurrentTrack();
+            return;
+        }
+
+        int targetVolume = Math.max(0, Math.min(127, Math.round((volumePercent / 100.0f) * 127)));
+        setMidiChannelVolume(synthesizer, 0);
+        sequencer.start();
+
+        int stepDurationMs = Math.max(1, Math.max(THEME_SWITCH_FADE_OUT_MS, THEME_SWITCH_FADE_IN_MS)
+                / THEME_SWITCH_FADE_STEPS);
+        for (int i = 1; i <= THEME_SWITCH_FADE_STEPS; i++) {
+            float progress = i / (float) THEME_SWITCH_FADE_STEPS;
+            int volume = Math.max(0, Math.min(targetVolume, Math.round(targetVolume * progress)));
+            setMidiChannelVolume(synthesizer, volume);
+
+            applyFadeOutToSnapshot(previous, progress);
+            sleepForFadeStep(stepDurationMs);
+        }
+    }
+
+    private TrackSnapshot snapshotCurrentTrack() {
+        return new TrackSnapshot(clip, midiSequencer, midiSynthesizer);
+    }
+
+    private void applyFadeOutToSnapshot(TrackSnapshot snapshot, float progress) {
+        if (snapshot == null || !snapshot.hasAudio()) {
+            return;
+        }
+
+        if (snapshot.clip != null && snapshot.clip.isRunning()
+                && snapshot.clip.isControlSupported(FloatControl.Type.MASTER_GAIN)) {
+            FloatControl gain = (FloatControl) snapshot.clip.getControl(FloatControl.Type.MASTER_GAIN);
+            float min = gain.getMinimum();
+            float start = gain.getValue();
+            float next = start + (min - start) * progress;
+            gain.setValue(Math.max(min, next));
+            return;
+        }
+
+        if (snapshot.synthesizer != null && snapshot.synthesizer.isOpen()) {
+            int startVolume = Math.max(0, Math.min(127, Math.round((volumePercent / 100.0f) * 127)));
+            int nextVolume = Math.max(0, Math.round(startVolume * (1.0f - progress)));
+            setMidiChannelVolume(snapshot.synthesizer, nextVolume);
+        }
+    }
+
+    private void closeSnapshot(TrackSnapshot snapshot) {
+        if (snapshot == null) {
+            return;
+        }
+
+        if (snapshot.clip != null) {
+            if (snapshot.clip.isRunning()) {
+                snapshot.clip.stop();
+            }
+            snapshot.clip.close();
+        }
+
+        if (snapshot.sequencer != null) {
+            if (snapshot.sequencer.isRunning()) {
+                snapshot.sequencer.stop();
+            }
+            snapshot.sequencer.close();
+        }
+
+        if (snapshot.synthesizer != null) {
+            snapshot.synthesizer.close();
+        }
+    }
+
+    private float computeTargetGainDb(FloatControl gainControl) {
+        float min = gainControl.getMinimum();
+        float max = gainControl.getMaximum();
+        if (muted || volumePercent <= 0) {
+            return min;
+        }
+
+        float normalized = volumePercent / 100.0f;
+        float db = (float) (20.0 * Math.log10(normalized));
+        if (db < min) {
+            db = min;
+        }
+        if (db > max) {
+            db = max;
+        }
+        return db;
+    }
+
+    private void sleepForFadeStep(int stepDurationMs) {
+        try {
+            Thread.sleep(Math.max(1, stepDurationMs));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
@@ -434,23 +601,7 @@ public class MusicHandler extends Thread {
         }
 
         FloatControl gainControl = (FloatControl) targetClip.getControl(FloatControl.Type.MASTER_GAIN);
-        float min = gainControl.getMinimum();
-        float max = gainControl.getMaximum();
-
-        if (muted || volumePercent <= 0) {
-            gainControl.setValue(min);
-            return;
-        }
-
-        float normalized = volumePercent / 100.0f;
-        float db = (float) (20.0 * Math.log10(normalized));
-        if (db < min) {
-            db = min;
-        }
-        if (db > max) {
-            db = max;
-        }
-        gainControl.setValue(db);
+        gainControl.setValue(computeTargetGainDb(gainControl));
     }
 
     private void closeClip() {
@@ -518,6 +669,10 @@ public class MusicHandler extends Thread {
 
     private void applyVolumeToMidiSynth(Synthesizer synthesizer) {
         int channelVolume = muted ? 0 : Math.max(0, Math.min(127, Math.round((volumePercent / 100.0f) * 127)));
+        setMidiChannelVolume(synthesizer, channelVolume);
+    }
+
+    private void setMidiChannelVolume(Synthesizer synthesizer, int channelVolume) {
         MidiChannel[] channels = synthesizer.getChannels();
         if (channels == null) {
             return;

@@ -11,8 +11,6 @@ import spaceinvaders.UI.SpaceInvadersUI;
 import spaceinvaders.scores.LeaderboardPanel;
 
 import java.awt.event.*;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 
 /**
  * ListenerActions handles all keyboard input events.
@@ -60,24 +58,10 @@ public class ListenerActions {
             game.fireHeld = true;
         }
         if (key == KeyEvent.VK_R && game.isGameOver()) {
-            // Only prompt for name if leaderboard is enabled
-            SwingUtilities.invokeLater(() -> {
-                if (LeaderboardPanel.isLeaderboardEnabled()) {
-                    // Prompt for player name before restarting
-                    // Use SwingUtilities.invokeLater to ensure dialog appears on EDT
-                    // Pass the game component as parent for proper focus and positioning
-                    String playerName = JOptionPane.showInputDialog(game, 
-                        "Enter your name for the leaderboard:", 
-                        "Player Name");
-                    if (playerName != null && !playerName.trim().isEmpty()) {
-                        game.getScoreManager().saveScore(playerName.trim());
-                    } else {
-                        // Save with default name if user cancels
-                        game.getScoreManager().saveScore("Anonymous");
-                    }
-                }
-                game.restartGame();
-            });
+            if (LeaderboardPanel.isLeaderboardEnabled()) {
+                game.getScoreManager().saveScore(game.getPlayerNameForLeaderboard());
+            }
+            game.restartGame();
         }
         if (key == KeyEvent.VK_P && !game.isGameOver()) {
             // Toggle pause

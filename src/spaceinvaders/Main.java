@@ -9,7 +9,7 @@ import javax.swing.*;
 public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Space Invaders with Images");
+            JFrame frame = new JFrame("Darth Invaders");
             SpaceInvadersUI game = new SpaceInvadersUI();
             frame.add(game);
             frame.setSize(600, 700);
@@ -19,7 +19,7 @@ public class Main {
             JMenuBar menuBar = game.createMenuBar();
             JMenu scoresMenu = new JMenu("Scores");
             JMenuItem viewLeaderboardItem = new JMenuItem("View Leaderboard");
-            viewLeaderboardItem.addActionListener(e -> LeaderboardPanel.showLeaderboard(game.getScoreManager()));
+            viewLeaderboardItem.addActionListener(e -> LeaderboardPanel.showLeaderboard(game.getScoreManager(), game));
             scoresMenu.add(viewLeaderboardItem);
             
             // Add separator
